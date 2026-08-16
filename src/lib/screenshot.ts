@@ -1,6 +1,6 @@
 "use client";
 
-import { canvasRef } from "./canvas-ref";
+import { captureFrameRef } from "./canvas-ref";
 
 type ShareNavigator = Navigator & {
   canShare?: (data?: ShareData) => boolean;
@@ -8,12 +8,9 @@ type ShareNavigator = Navigator & {
 };
 
 export async function captureView(): Promise<"shared" | "downloaded" | "failed"> {
-  const canvas = canvasRef.current;
-  if (!canvas) return "failed";
-
-  const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((b) => resolve(b), "image/png");
-  });
+  const capture = captureFrameRef.current;
+  if (!capture) return "failed";
+  const blob = await capture();
   if (!blob) return "failed";
 
   const filename = `male-atlas-${Date.now()}.png`;

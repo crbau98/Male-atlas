@@ -8,7 +8,7 @@ import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
 import { REGIONS } from "@/lib/regions";
 import { useIsPhone } from "@/lib/use-is-phone";
-import { canvasRef } from "@/lib/canvas-ref";
+import { canvasRef, captureFrameRef } from "@/lib/canvas-ref";
 import { haptic } from "@/lib/haptics";
 import { LIGHTING_PRESETS } from "@/lib/lighting-presets";
 import { AnatomyCallouts } from "./AnatomyCallouts";
@@ -104,9 +104,17 @@ export function AtlasCanvas() {
     useAtlas.getState().select(null);
   }, [resetView]);
 
-  const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
+  const handleCreated = useCallback((state: {
+    gl: THREE.WebGLRenderer;
+    scene: THREE.Scene;
+    camera: THREE.Camera;
+  }) => {
     const canvas = state.gl.domElement;
     canvasRef.current = canvas;
+    captureFrameRef.current = () => {
+      state.gl.render(state.scene, state.camera);
+      return new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    };
     canvas.addEventListener(
       "webglcontextlost",
       (event) => {
@@ -164,7 +172,7 @@ export function AtlasCanvas() {
           antialias: true,
           localClippingEnabled: true,
           powerPreference: "high-performance",
-          preserveDrawingBuffer: true,
+          preserveDrawingBuffer: false,
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: preset.exposure,
           outputColorSpace: THREE.SRGBColorSpace,

@@ -9,6 +9,9 @@ import { nextClipMode } from "./clip";
 import { DEMO } from "./demo";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
+export type AtlasTheme = "dark" | "light";
+export type LightingPreset = "museum" | "clinical" | "dramatic";
+export type QualityMode = "auto" | "balanced" | "high";
 
 type ViewSnap = {
   dissection: number;
@@ -60,6 +63,12 @@ type AtlasState = {
   showLabels: boolean;
   pinned: Array<{ id: string; point: Vec3 }>;
   history: ViewSnap[];
+  theme: AtlasTheme;
+  lightingPreset: LightingPreset;
+  qualityMode: QualityMode;
+  physiologyOn: boolean;
+  physiologyIntensity: number;
+  breathingOn: boolean;
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -106,6 +115,12 @@ type AtlasState = {
   closePeel: () => void;
   undoView: () => void;
   pushHistory: () => void;
+  setTheme: (v: AtlasTheme) => void;
+  setLightingPreset: (v: LightingPreset) => void;
+  setQualityMode: (v: QualityMode) => void;
+  togglePhysiology: () => void;
+  setPhysiologyIntensity: (v: number) => void;
+  toggleBreathing: () => void;
 };
 
 const defaultSystems = Object.fromEntries(SYSTEM_ORDER.map((s) => [s, true]));
@@ -191,6 +206,12 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   showLabels: true,
   pinned: [],
   history: [] as ViewSnap[],
+  theme: "dark",
+  lightingPreset: "museum",
+  qualityMode: "auto",
+  physiologyOn: true,
+  physiologyIntensity: 0.68,
+  breathingOn: true,
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
@@ -417,6 +438,13 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       showLabels: true,
       history: [],
     }),
+  setTheme: (theme) => set({ theme }),
+  setLightingPreset: (lightingPreset) => set({ lightingPreset }),
+  setQualityMode: (qualityMode) => set({ qualityMode }),
+  togglePhysiology: () => set({ physiologyOn: !get().physiologyOn }),
+  setPhysiologyIntensity: (physiologyIntensity) =>
+    set({ physiologyIntensity: Math.min(1, Math.max(0, physiologyIntensity)) }),
+  toggleBreathing: () => set({ breathingOn: !get().breathingOn }),
   pushHistory: () => {
     const cur = takeSnap(get());
     const hist = get().history;

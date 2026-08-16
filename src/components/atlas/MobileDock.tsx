@@ -5,6 +5,7 @@ import { useAtlas } from "@/lib/atlas-store";
 import { haptic } from "@/lib/haptics";
 import { captureView } from "@/lib/screenshot";
 import { shareCurrentView } from "@/lib/view-link";
+import { ExperienceControls } from "./ExperienceControls";
 
 function chip(on: boolean) {
   return `min-h-11 flex-1 rounded-full px-3 text-xs ${
@@ -68,7 +69,11 @@ export function MobileDock() {
     clipMode === "off" ? "Cut" : clipMode === "quarter" ? "¼" : clipMode === "hemi" ? "Hemi" : clipMode.slice(0, 3);
 
   return (
-    <div className="pointer-events-auto space-y-2 rounded-2xl border border-white/10 bg-[#101218]/92 px-3 py-2 backdrop-blur-md">
+    <div
+      className={`atlas-panel pointer-events-auto space-y-2 rounded-2xl border border-white/10 px-3 py-2 backdrop-blur-md ${
+        more ? "max-h-[46vh] overflow-y-auto overscroll-contain" : ""
+      }`}
+    >
       {toast ? (
         <p className="rounded-full bg-[#c4a46c]/15 px-3 py-1 text-center text-[11px] text-[#c4a46c]">{toast}</p>
       ) : null}
@@ -109,6 +114,7 @@ export function MobileDock() {
       ) : null}
       {more ? (
         <div className="flex flex-wrap gap-2">
+          <ExperienceControls />
           <button type="button" onClick={tap(() => setPhotoreal(!photoreal))} className={chip(photoreal)}>
             Nude
           </button>

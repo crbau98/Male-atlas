@@ -20,6 +20,9 @@ export function PhotorealShell() {
   const peelCenter = useAtlas((s) => s.peelCenter);
   const peelRadius = useAtlas((s) => s.peelRadius);
   const photoreal = useAtlas((s) => s.photoreal);
+  const physiologyOn = useAtlas((s) => s.physiologyOn);
+  const physiologyIntensity = useAtlas((s) => s.physiologyIntensity);
+  const breathingOn = useAtlas((s) => s.breathingOn);
   const setPeel = useAtlas((s) => s.setPeel);
   const setDissection = useAtlas((s) => s.setDissection);
   const setPeelRadius = useAtlas((s) => s.setPeelRadius);
@@ -41,6 +44,7 @@ export function PhotorealShell() {
   const lastPeel = useRef<string>("");
   const closeAmt = useRef(0);
   const skinMat = useRef<THREE.MeshPhysicalMaterial | null>(null);
+  const touchTarget = useRef(0);
 
   const stopHold = () => {
     if (hold.current) {
@@ -79,6 +83,11 @@ export function PhotorealShell() {
     uClose: { value: 0 },
     uInvertPeel: { value: 0 },
     uAttenuation: { value: new THREE.Color(appearance.attenuation) },
+    uTouchPoint: { value: new THREE.Vector3(0, -10, 0) },
+    uTouchStrength: { value: 0 },
+    uPhysiology: { value: physiologyIntensity },
+    uBreathPhase: { value: 0 },
+    uMotionAmount: { value: 0 },
   });
 
   const material = useMemo(() => {
@@ -106,9 +115,14 @@ export function PhotorealShell() {
         uSheenColor: uniforms.current.uSheenColor,
         uClose: uniforms.current.uClose,
         uAttenuation: uniforms.current.uAttenuation,
+        uTouchPoint: uniforms.current.uTouchPoint,
+        uTouchStrength: uniforms.current.uTouchStrength,
+        uPhysiology: uniforms.current.uPhysiology,
+        uBreathPhase: uniforms.current.uBreathPhase,
+        uMotionAmount: uniforms.current.uMotionAmount,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v5-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v6-${appearance.id}`;
     return mat;
   }, [appearance]);
 
@@ -116,7 +130,7 @@ export function PhotorealShell() {
     skinMat.current = material;
   }, [material]);
 
-  useFrame((_, delta) => {
+  useFrame((state, delta) => {
     const u = uniforms.current;
     u.uDissection.value = THREE.MathUtils.damp(u.uDissection.value, dissection, 3.4, delta);
     u.uHairColor.value.set(appearance.hair);
@@ -125,6 +139,20 @@ export function PhotorealShell() {
     u.uEyeColor.value.set(appearance.eyes);
     u.uSheenColor.value.set(appearance.sheen);
     u.uAttenuation.value.set(appearance.attenuation);
+    u.uPhysiology.value = physiologyOn ? physiologyIntensity : 0;
+    u.uTouchStrength.value = THREE.MathUtils.damp(
+      u.uTouchStrength.value,
+      touchTarget.current,
+      touchTarget.current > 0 ? 7 : 1.35,
+      delta,
+    );
+    u.uBreathPhase.value = state.clock.elapsedTime * 1.32;
+    u.uMotionAmount.value = THREE.MathUtils.damp(
+      u.uMotionAmount.value,
+      breathingOn && physiologyOn ? 0.8 + physiologyIntensity * 0.45 : 0,
+      2.2,
+      delta,
+    );
     const key = peelCenter ? peelCenter.join(",") : "";
     if (key !== lastPeel.current) {
       lastPeel.current = key;
@@ -178,6 +206,8 @@ export function PhotorealShell() {
       }) => {
         const point: [number, number, number] = [event.point.x, event.point.y, event.point.z];
         const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
+        uniforms.current.uTouchPoint.value.copy(event.point);
+        touchTarget.current = 1;
         gesture.current = {
           x: event.nativeEvent.clientX,
           y: event.nativeEvent.clientY,
@@ -198,26 +228,38 @@ export function PhotorealShell() {
           }, 70);
         }, 420);
       }}
-      onPointerMove={(event: { nativeEvent: { clientX: number; clientY: number } }) => {
+      onPointerMove={(event: {
+        point: THREE.Vector3;
+        nativeEvent: { clientX: number; clientY: number };
+      }) => {
         const dx = event.nativeEvent.clientX - gesture.current.x;
         const dy = event.nativeEvent.clientY - gesture.current.y;
         if (dx * dx + dy * dy > 64) {
           gesture.current.dragged = true;
+          touchTarget.current = 0;
           if (!gesture.current.peeled) stopHold();
+        } else {
+          uniforms.current.uTouchPoint.value.copy(event.point);
         }
       }}
       onPointerUp={() => {
         const g = gesture.current;
         const dt = performance.now() - g.t;
+        touchTarget.current = 0;
         stopHold();
         if (!g.dragged && !g.peeled && dt < 420) startPeel(g.point, g.genital);
       }}
-      onPointerLeave={stopHold}
-      onPointerCancel={stopHold}
+      onPointerLeave={() => {
+        touchTarget.current = 0;
+        stopHold();
+      }}
+      onPointerCancel={() => {
+        touchTarget.current = 0;
+        stopHold();
+      }}
     />
   );
 }
 
 useGLTF.preload("/models/systems/integument.glb");
-useGLTF.preload("/models/systems/muscular.glb");
 useGLTF.preload("/models/systems/reproductive.glb");

@@ -22,6 +22,7 @@ import { applyViewFromUrl } from "@/lib/view-link";
 
 const LOOKS: AppearanceId[] = ["julian", "malik", "kenji", "diego"];
 const LOOK_KEY = "male-atlas-look";
+const EXPERIENCE_KEY = "male-atlas-experience-v1";
 
 const AtlasCanvas = dynamic(
   () => import("./AtlasCanvas").then((m) => m.AtlasCanvas),
@@ -54,6 +55,7 @@ export function AtlasApp() {
   const nextDemo = useAtlas((s) => s.nextDemo);
   const prevDemo = useAtlas((s) => s.prevDemo);
   const stopDemo = useAtlas((s) => s.stopDemo);
+  const theme = useAtlas((s) => s.theme);
   const phone = useIsPhone();
 
   useEffect(() => {
@@ -66,6 +68,56 @@ export function AtlasApp() {
   useEffect(() => {
     if (appearanceId) window.localStorage.setItem(LOOK_KEY, appearanceId);
   }, [appearanceId]);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(EXPERIENCE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<ReturnType<typeof useAtlas.getState>>;
+        useAtlas.setState({
+          theme: saved.theme === "light" ? "light" : "dark",
+          lightingPreset:
+            saved.lightingPreset === "clinical" || saved.lightingPreset === "dramatic"
+              ? saved.lightingPreset
+              : "museum",
+          qualityMode:
+            saved.qualityMode === "balanced" || saved.qualityMode === "high"
+              ? saved.qualityMode
+              : "auto",
+          physiologyOn: saved.physiologyOn !== false,
+          physiologyIntensity:
+            typeof saved.physiologyIntensity === "number" ? saved.physiologyIntensity : 0.68,
+          breathingOn: saved.breathingOn !== false,
+        });
+      }
+    } catch {
+      window.localStorage.removeItem(EXPERIENCE_KEY);
+    }
+
+    return useAtlas.subscribe((state, previous) => {
+      if (
+        state.theme === previous.theme &&
+        state.lightingPreset === previous.lightingPreset &&
+        state.qualityMode === previous.qualityMode &&
+        state.physiologyOn === previous.physiologyOn &&
+        state.physiologyIntensity === previous.physiologyIntensity &&
+        state.breathingOn === previous.breathingOn
+      ) {
+        return;
+      }
+      window.localStorage.setItem(
+        EXPERIENCE_KEY,
+        JSON.stringify({
+          theme: state.theme,
+          lightingPreset: state.lightingPreset,
+          qualityMode: state.qualityMode,
+          physiologyOn: state.physiologyOn,
+          physiologyIntensity: state.physiologyIntensity,
+          breathingOn: state.breathingOn,
+        }),
+      );
+    });
+  }, []);
 
   useEffect(() => {
     applyViewFromUrl();
@@ -145,7 +197,10 @@ export function AtlasApp() {
 
   if (phone) {
     return (
-      <div className="flex h-dvh flex-col overflow-hidden bg-[#07080c] text-[#efece6]">
+      <div
+        data-atlas-theme={theme}
+        className="atlas-shell flex h-dvh flex-col overflow-hidden text-[var(--atlas-foreground)]"
+      >
         <div className="relative min-h-0 flex-1">
           <AtlasCanvas />
           <AtlasLoader />
@@ -172,7 +227,7 @@ export function AtlasApp() {
             </p>
           ) : null}
         </div>
-        <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#0b0d12] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+        <div className="atlas-bottom shrink-0 space-y-2 border-t border-white/10 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
           {mobileTab === "view" ? (
             <>
               <MobileDock />
@@ -209,7 +264,10 @@ export function AtlasApp() {
   }
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#07080c] text-[#efece6]">
+    <div
+      data-atlas-theme={theme}
+      className="atlas-shell relative h-dvh overflow-hidden text-[var(--atlas-foreground)]"
+    >
       <AtlasCanvas />
       <AtlasLoader />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 md:p-6">

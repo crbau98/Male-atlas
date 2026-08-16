@@ -22,6 +22,14 @@ export function buildViewUrl(): string {
   if (s.xrayOn) params.set("xray", "1");
   if (s.pathwayOn === false) params.set("pathway", "0");
   if (s.selectedId) params.set("part", s.selectedId);
+  if (s.theme !== "dark") params.set("theme", s.theme);
+  if (s.lightingPreset !== "museum") params.set("light", s.lightingPreset);
+  if (s.qualityMode !== "auto") params.set("quality", s.qualityMode);
+  if (!s.physiologyOn) params.set("living", "0");
+  if (Math.abs(s.physiologyIntensity - 0.68) > 0.01) {
+    params.set("response", s.physiologyIntensity.toFixed(2));
+  }
+  if (!s.breathingOn) params.set("breath", "0");
 
   const url = new URL(window.location.href);
   url.search = params.toString();
@@ -65,6 +73,23 @@ export function applyViewFromUrl() {
 
   if (params.get("xray") === "1") atlas.toggleXray();
   if (params.get("pathway") === "0") atlas.togglePathway();
+
+  const theme = params.get("theme");
+  if (theme === "dark" || theme === "light") atlas.setTheme(theme);
+  const light = params.get("light");
+  if (light === "museum" || light === "clinical" || light === "dramatic") {
+    atlas.setLightingPreset(light);
+  }
+  const quality = params.get("quality");
+  if (quality === "auto" || quality === "balanced" || quality === "high") {
+    atlas.setQualityMode(quality);
+  }
+  if (params.get("living") === "0" && atlas.physiologyOn) atlas.togglePhysiology();
+  const response = params.get("response");
+  if (response !== null && Number.isFinite(Number(response))) {
+    atlas.setPhysiologyIntensity(Number(response));
+  }
+  if (params.get("breath") === "0" && atlas.breathingOn) atlas.toggleBreathing();
 
   const part = params.get("part");
   if (part) atlas.select(part);

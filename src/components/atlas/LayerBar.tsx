@@ -6,6 +6,7 @@ import { REGIONS, type RegionId } from "@/lib/regions";
 import { captureView } from "@/lib/screenshot";
 import { shareCurrentView } from "@/lib/view-link";
 import { AppearanceStrip } from "./AppearanceSelect";
+import { ExperienceControls } from "./ExperienceControls";
 
 function Slider({
   label,
@@ -97,12 +98,20 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
     }`;
 
   return (
-    <div className="pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
+    <div className="atlas-panel pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 px-4 py-3 backdrop-blur-md">
       {toast ? (
         <p className="w-full rounded-full bg-[#c4a46c]/15 px-3 py-1 text-center text-[11px] text-[#c4a46c]">
           {toast}
         </p>
       ) : null}
+      <details className="w-full">
+        <summary className="min-h-10 cursor-pointer list-none rounded-xl border border-white/10 px-3 py-2 text-[11px] tracking-[0.16em] text-[var(--atlas-accent)] uppercase">
+          Living model · studio · performance
+        </summary>
+        <div className="mt-2">
+          <ExperienceControls />
+        </div>
+      </details>
       {compact ? null : <AppearanceStrip />}
       <Slider
         label="Dissection"

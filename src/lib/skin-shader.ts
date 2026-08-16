@@ -6,8 +6,13 @@ uniform vec3 uSkinTint;
 uniform vec3 uEyeColor;
 uniform vec3 uSheenColor;
 uniform vec3 uAttenuation;
+uniform vec3 uTouchPoint;
 uniform float uMelanin;
 uniform float uClose;
+uniform float uTouchStrength;
+uniform float uPhysiology;
+uniform float uBreathPhase;
+uniform float uMotionAmount;
 
 float atlasHash(vec3 p) {
   p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.23));
@@ -41,10 +46,31 @@ float atlasSoft(float x, float a, float b) {
 `;
 
 export function injectPhotorealSkin(
-  shader: { fragmentShader: string; uniforms: Record<string, IUniform> },
+  shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, IUniform> },
   extra: Record<string, IUniform>,
 ) {
   Object.assign(shader.uniforms, extra);
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       uniform vec3 uTouchPoint;
+       uniform float uTouchStrength;
+       uniform float uPhysiology;
+       uniform float uBreathPhase;
+       uniform float uMotionAmount;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+     float atlasChest = smoothstep(1.08, 1.18, position.y) * (1.0 - smoothstep(1.40, 1.48, position.y));
+     float atlasAbdomen = smoothstep(0.90, 1.00, position.y) * (1.0 - smoothstep(1.16, 1.24, position.y));
+     float atlasBreath = atlasChest + atlasAbdomen * 0.62;
+     transformed += objectNormal * atlasBreath * sin(uBreathPhase) * uMotionAmount * 0.006;
+     vec3 atlasTouchWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
+     float atlasTouchPush = exp(-pow(distance(atlasTouchWorld, uTouchPoint) / 0.055, 2.0));
+     transformed += objectNormal * atlasTouchPush * uTouchStrength * uPhysiology * 0.003;`,
+    );
   shader.fragmentShader = shader.fragmentShader
     .replace(
       "uniform float uHasWindow;",
@@ -76,6 +102,9 @@ export function injectPhotorealSkin(
        skin *= 0.985 + mottling * 0.028;
        skin = mix(skin, vec3(skin.r * 0.93, skin.g * 0.96, skin.b * 1.04), (1.0 - uMelanin) * 0.07);
        vec3 flush = mix(uSkinTint, uAttenuation, 0.55);
+       float touchDistance = distance(w, uTouchPoint);
+       float touchResponse = exp(-pow(touchDistance / 0.075, 2.0)) * uTouchStrength * uPhysiology;
+       float goose = step(0.78, atlasHash(floor(w * 220.0))) * touchResponse;
 
        float faceMask = atlasSoft(w.y, 1.50, 1.54)
          * (1.0 - atlasSoft(w.y, 1.66, 1.70))
@@ -168,6 +197,8 @@ export function injectPhotorealSkin(
        float chestVein = (1.0 - uMelanin) * atlasSoft(w.y, 1.18, 1.24) * (1.0 - atlasSoft(w.y, 1.34, 1.4))
          * atlasSoft(w.z, 0.14, 0.2) * (0.35 + 0.65 * abs(sin(w.x * 36.0 + w.y * 18.0)));
        col = mix(col, mix(col, vec3(0.42, 0.28, 0.38), 0.35), chestVein * 0.22);
+       col = mix(col, mix(col, uAttenuation, 0.58), touchResponse * 0.46);
+       col *= 1.0 + goose * 0.035;
 
        float pore = 0.0;
        if (uClose > 0.45) {
@@ -188,6 +219,12 @@ export function injectPhotorealSkin(
       `#include <roughnessmap_fragment>
        float atlasPoreRough = atlasFbm(vAtlasWorld * 340.0) - 0.5;
        float atlasSkinRough = atlasFbm(vAtlasWorld * 18.0) - 0.5;
-       roughnessFactor = clamp(roughnessFactor + atlasPoreRough * 0.05 + atlasSkinRough * 0.035, 0.05, 0.95);`,
+       float atlasTouchRough = exp(-pow(distance(vAtlasWorld, uTouchPoint) / 0.075, 2.0))
+         * uTouchStrength * uPhysiology;
+       roughnessFactor = clamp(
+         roughnessFactor + atlasPoreRough * 0.05 + atlasSkinRough * 0.035 - atlasTouchRough * 0.08,
+         0.05,
+         0.95
+       );`,
     );
 }

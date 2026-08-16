@@ -11,9 +11,10 @@ export function tapPart(id: string, point: Vec3) {
   const doubled = lastTap.id === id && now - lastTap.t < 380;
   lastTap.id = id;
   lastTap.t = now;
-  atlas.select(id);
+  atlas.select(id, point);
   if (doubled) {
-    if (!atlas.isolated) atlas.toggleIsolate();
+    if (!useAtlas.getState().isolated) atlas.toggleIsolate();
+    useAtlas.setState({ cameraGoal: { target: point, distance: 0.3 } });
     return;
   }
   atlas.lookAt(point);

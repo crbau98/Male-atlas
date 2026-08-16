@@ -72,7 +72,7 @@ export type TourStep = {
 export const TOUR: TourStep[] = [
   {
     title: "Living surface",
-    body: "Drag to orbit. Tap skin to peel a window. Double-tap a named part to isolate it.",
+    body: "Drag to orbit. Tap skin to peel a window. Hold to widen it. Double-tap a named part to isolate, then Focus to fly in.",
     region: "full",
     explode: 0,
   },

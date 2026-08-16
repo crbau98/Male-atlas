@@ -51,6 +51,9 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const stopTour = useAtlas((s) => s.stopTour);
   const resetView = useAtlas((s) => s.resetView);
   const setPeel = useAtlas((s) => s.setPeel);
+  const undoHide = useAtlas((s) => s.undoHide);
+  const focusSelection = useAtlas((s) => s.focusSelection);
+  const selectedId = useAtlas((s) => s.selectedId);
 
   const chip = (on: boolean) =>
     `min-h-11 rounded-full px-3 py-1.5 text-xs ${
@@ -109,6 +112,16 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
         )}
         <button type="button" onClick={resetView} className={chip(false)}>
           Reset
+        </button>
+        <button type="button" onClick={undoHide} className={chip(false)}>
+          Undo hide
+        </button>
+        <button
+          type="button"
+          onClick={focusSelection}
+          className={chip(Boolean(selectedId))}
+        >
+          Focus
         </button>
       </div>
     </div>

@@ -12,8 +12,11 @@ export function SelectionHud() {
   const tourIndex = useAtlas((s) => s.tourIndex);
   const toggleIsolate = useAtlas((s) => s.toggleIsolate);
   const hideSelected = useAtlas((s) => s.hideSelected);
+  const undoHide = useAtlas((s) => s.undoHide);
+  const focusSelection = useAtlas((s) => s.focusSelection);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const nextTour = useAtlas((s) => s.nextTour);
+  const prevTour = useAtlas((s) => s.prevTour);
   const stopTour = useAtlas((s) => s.stopTour);
   const part = findPart(selectedId);
   const step = tourIndex !== null ? TOUR[tourIndex] : null;
@@ -32,6 +35,13 @@ export function SelectionHud() {
           <div className="mt-2 flex gap-2">
             <button
               type="button"
+              onClick={prevTour}
+              className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
+            >
+              Back
+            </button>
+            <button
+              type="button"
               onClick={nextTour}
               className="min-h-10 rounded-full bg-[#c4a46c] px-3 text-xs text-[#16140f]"
             >
@@ -44,6 +54,12 @@ export function SelectionHud() {
             >
               Skip
             </button>
+          </div>
+          <div className="mt-2 h-1 overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full bg-[#c4a46c] transition-all duration-700"
+              style={{ width: `${((tourIndex! + 1) / TOUR.length) * 100}%` }}
+            />
           </div>
         </div>
       ) : null}
@@ -59,6 +75,13 @@ export function SelectionHud() {
           <div className="mt-2 flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={focusSelection}
+              className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
+            >
+              Focus
+            </button>
+            <button
+              type="button"
               onClick={toggleIsolate}
               className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
             >
@@ -70,6 +93,13 @@ export function SelectionHud() {
               className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
             >
               Hide
+            </button>
+            <button
+              type="button"
+              onClick={undoHide}
+              className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
+            >
+              Undo
             </button>
             <button
               type="button"

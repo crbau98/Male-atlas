@@ -10,6 +10,8 @@ import { AppearanceSelect, AppearanceStrip } from "./AppearanceSelect";
 import { Inspector } from "./Inspector";
 import { InstallHint } from "./InstallHint";
 import { LayerBar } from "./LayerBar";
+import { HoverChip } from "./HoverChip";
+import { RegionRail } from "./RegionRail";
 import { SelectionHud } from "./SelectionHud";
 import { StructureTree } from "./StructureTree";
 
@@ -28,9 +30,15 @@ export function AtlasApp() {
   const toggleIsolate = useAtlas((s) => s.toggleIsolate);
   const hideSelected = useAtlas((s) => s.hideSelected);
   const nextTour = useAtlas((s) => s.nextTour);
+  const prevTour = useAtlas((s) => s.prevTour);
   const stopTour = useAtlas((s) => s.stopTour);
+  const undoHide = useAtlas((s) => s.undoHide);
+  const focusSelection = useAtlas((s) => s.focusSelection);
+  const goRegion = useAtlas((s) => s.goRegion);
+  const goAdjacentRegion = useAtlas((s) => s.goAdjacentRegion);
   const mobileTab = useAtlas((s) => s.mobileTab);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
+  const tourIndex = useAtlas((s) => s.tourIndex);
   const phone = useIsPhone();
 
   useEffect(() => {
@@ -54,6 +62,19 @@ export function AtlasApp() {
         event.preventDefault();
         nextTour();
       }
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        prevTour();
+      }
+      if (event.key === "u" || event.key === "U") undoHide();
+      if (event.key === "f" || event.key === "F") focusSelection();
+      if (event.key === "[" ) goAdjacentRegion(-1);
+      if (event.key === "]" ) goAdjacentRegion(1);
+      if (event.key === "1") goRegion("full");
+      if (event.key === "2") goRegion("head");
+      if (event.key === "3") goRegion("chest");
+      if (event.key === "4") goRegion("abdomen");
+      if (event.key === "5") goRegion("pelvis");
       if (event.key === "t" || event.key === "T") {
         const touring = useAtlas.getState().tourIndex !== null;
         if (touring) stopTour();
@@ -62,7 +83,13 @@ export function AtlasApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hideSelected, nextTour, resetView, setAppearance, stopTour, toggleIsolate]);
+  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, prevTour, resetView, setAppearance, stopTour, toggleIsolate, undoHide]);
+
+  useEffect(() => {
+    if (tourIndex === null) return;
+    const id = window.setTimeout(() => useAtlas.getState().nextTour(), 7200);
+    return () => window.clearTimeout(id);
+  }, [tourIndex]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -89,9 +116,11 @@ export function AtlasApp() {
               Looks
             </button>
           </div>
-          <div className="pointer-events-none absolute inset-x-3 top-16">
+          <div className="pointer-events-none absolute inset-x-3 top-16 flex flex-col items-start gap-2">
             <SelectionHud />
+            <HoverChip />
           </div>
+          <RegionRail />
           {catalog.meta.partCount === 0 ? (
             <p className="absolute inset-x-4 top-20 rounded-full bg-black/70 px-3 py-2 text-center text-[11px] text-[#d9c59a]">
               Run python3 scripts/ingest_bodyparts3d.py
@@ -149,6 +178,7 @@ export function AtlasApp() {
               Appearances
             </button>
             <SelectionHud />
+            <HoverChip />
             <Inspector />
           </div>
         </div>
@@ -156,6 +186,7 @@ export function AtlasApp() {
           <LayerBar />
         </div>
       </div>
+      <RegionRail />
     </div>
   );
 }

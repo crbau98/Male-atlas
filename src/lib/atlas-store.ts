@@ -5,7 +5,7 @@ import type { AppearanceId, CatalogPart } from "./types";
 import { SYSTEM_ORDER } from "./systems";
 import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
 
-type CameraGoal = { eye: Vec3; target: Vec3 };
+type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
 
 type AtlasState = {
   appearanceId: AppearanceId | null;
@@ -16,9 +16,11 @@ type AtlasState = {
   peelCenter: Vec3 | null;
   peelRadius: number;
   selectedId: string | null;
+  selectedPoint: Vec3 | null;
   hoveredId: string | null;
   isolated: boolean;
   hidden: Set<string>;
+  hiddenStack: string[];
   systemOn: Record<string, boolean>;
   search: string;
   brainFocus: boolean;
@@ -35,10 +37,13 @@ type AtlasState = {
   setClipEnabled: (v: boolean) => void;
   setPeel: (center: Vec3 | null, radius?: number) => void;
   setPeelRadius: (radius: number) => void;
-  select: (id: string | null) => void;
+  select: (id: string | null, point?: Vec3) => void;
   hover: (id: string | null) => void;
   toggleIsolate: () => void;
   hideSelected: () => void;
+  undoHide: () => void;
+  focusSelection: () => void;
+  goAdjacentRegion: (dir: -1 | 1) => void;
   toggleSystem: (id: string) => void;
   setSearch: (q: string) => void;
   setBrainFocus: (v: boolean) => void;
@@ -50,6 +55,7 @@ type AtlasState = {
   clearCameraGoal: () => void;
   startTour: () => void;
   nextTour: () => void;
+  prevTour: () => void;
   stopTour: () => void;
   applyTourStep: (index: number) => void;
   resetView: () => void;
@@ -79,9 +85,11 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   peelCenter: null,
   peelRadius: 0.12,
   selectedId: null,
+  selectedPoint: null,
   hoveredId: null,
   isolated: false,
   hidden: new Set(),
+  hiddenStack: [],
   systemOn: defaultSystems,
   search: "",
   brainFocus: false,
@@ -99,7 +107,12 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setPeel: (peelCenter, peelRadius) =>
     set({ peelCenter, peelRadius: peelRadius ?? get().peelRadius }),
   setPeelRadius: (peelRadius) => set({ peelRadius }),
-  select: (selectedId) => set({ selectedId, isolated: false }),
+  select: (selectedId, point) =>
+    set({
+      selectedId,
+      isolated: false,
+      selectedPoint: selectedId ? (point ?? get().selectedPoint) : null,
+    }),
   hover: (hoveredId) => set({ hoveredId }),
   toggleIsolate: () => set({ isolated: !get().isolated }),
   hideSelected: () => {
@@ -107,7 +120,31 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     if (!id) return;
     const hidden = new Set(get().hidden);
     hidden.add(id);
-    set({ hidden, selectedId: null, isolated: false });
+    set({
+      hidden,
+      selectedId: null,
+      isolated: false,
+      hiddenStack: [...get().hiddenStack, id],
+    });
+  },
+  undoHide: () => {
+    const stack = [...get().hiddenStack];
+    const id = stack.pop();
+    if (!id) return;
+    const hidden = new Set(get().hidden);
+    hidden.delete(id);
+    set({ hidden, hiddenStack: stack, selectedId: id, isolated: false });
+  },
+  focusSelection: () => {
+    const point = get().selectedPoint ?? get().peelCenter;
+    if (!point) return;
+    set({ cameraGoal: { target: point, distance: 0.28 } });
+  },
+  goAdjacentRegion: (dir) => {
+    const ids = Object.keys(REGIONS) as RegionId[];
+    const i = ids.indexOf(get().region);
+    const next = ids[(i + dir + ids.length) % ids.length];
+    get().goRegion(next);
   },
   toggleSystem: (id) =>
     set({ systemOn: { ...get().systemOn, [id]: !get().systemOn[id] } }),
@@ -123,13 +160,11 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setPhotoreal: (photoreal) => set({ photoreal }),
   setMobileTab: (mobileTab) => set({ mobileTab }),
   lookAt: (target, eye) => {
-    const [x, y, z] = target;
-    set({
-      cameraGoal: {
-        target,
-        eye: eye ?? [x + 0.28, y + 0.12, z + 0.48],
-      },
-    });
+    if (eye) {
+      set({ cameraGoal: { eye, target } });
+      return;
+    }
+    set({ cameraGoal: { target, distance: 0.46 } });
   },
   goRegion: (id) => set(applyRegionPatch(id)),
   clearCameraGoal: () => set({ cameraGoal: null }),
@@ -155,6 +190,16 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     const current = get().tourIndex ?? -1;
     get().applyTourStep(current + 1);
   },
+  prevTour: () => {
+    const current = get().tourIndex;
+    if (current === null) return;
+    if (current <= 0) {
+      get().stopTour();
+      get().goRegion("full");
+      return;
+    }
+    get().applyTourStep(current - 1);
+  },
   stopTour: () => set({ tourIndex: null }),
   resetView: () =>
     set({
@@ -164,8 +209,10 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       clipY: 1.8,
       peelCenter: null,
       selectedId: null,
+      selectedPoint: null,
       isolated: false,
       hidden: new Set(),
+      hiddenStack: [],
       brainFocus: false,
       pelvisFocus: false,
       photoreal: true,

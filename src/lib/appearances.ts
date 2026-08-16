@@ -8,6 +8,7 @@ export type Appearance = {
   portrait: string;
   albedo: string;
   normal: string;
+  roughness: string;
   melanin: number;
   skinTint: string;
   attenuation: string;
@@ -25,6 +26,7 @@ export const APPEARANCES: Appearance[] = [
     portrait: "/appearances/male-atlas-julian.png",
     albedo: "/skins/skin-albedo-fair.png",
     normal: "/skins/skin-normal.png",
+    roughness: "/skins/skin-rough-fair.png",
     melanin: 0.16,
     skinTint: "#f3c7b0",
     attenuation: "#c45a48",
@@ -40,6 +42,7 @@ export const APPEARANCES: Appearance[] = [
     portrait: "/appearances/male-atlas-malik.png",
     albedo: "/skins/skin-albedo-deep.png",
     normal: "/skins/skin-normal.png",
+    roughness: "/skins/skin-rough-deep.png",
     melanin: 0.78,
     skinTint: "#6a3a28",
     attenuation: "#2a120c",
@@ -55,6 +58,7 @@ export const APPEARANCES: Appearance[] = [
     portrait: "/appearances/male-atlas-kenji.png",
     albedo: "/skins/skin-albedo-warm.png",
     normal: "/skins/skin-normal.png",
+    roughness: "/skins/skin-rough-warm.png",
     melanin: 0.28,
     skinTint: "#e8c3a8",
     attenuation: "#b85a42",
@@ -70,6 +74,7 @@ export const APPEARANCES: Appearance[] = [
     portrait: "/appearances/male-atlas-diego.png",
     albedo: "/skins/skin-albedo-olive.png",
     normal: "/skins/skin-normal.png",
+    roughness: "/skins/skin-rough-olive.png",
     melanin: 0.42,
     skinTint: "#c99270",
     attenuation: "#8a3e2c",

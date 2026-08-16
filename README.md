@@ -9,7 +9,9 @@ On a phone the atlas **opens straight into the 3D view** (Julian, or your last l
 - **iPhone:** Share → Add to Home Screen
 - **Android:** Chrome menu → Install app, or the in-app install chip
 
-Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Gold markers jump to Brain / Chest / Belly / Pelvis. **Tour** walks the layers. Bottom tabs: View, Parts, Info.
+Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Side arrows step Full → Brain → Chest → Belly → Pelvis. Gold markers jump the camera. **Tour** walks the layers with Back/Next. **Focus** flies in on the selected mesh; **Undo hide** restores it. Bottom tabs: View, Parts, Info.
+
+Skin maps are low-grain (smooth color, pore detail in the normal map that strengthens as you zoom). Fly-tos arc over about a second; peel, dissection, and explode ease instead of popping.
 
 ## Run
 
@@ -44,4 +46,4 @@ This is an educational atlas, not a diagnostic device. BodyParts3D authors note 
 ## Keys
 
 - Click photoreal surface: peel window (genital region also selects the named part)
-- `T` tour, `Space` next step, `R` reset, `X` isolate, `H` hide, `Esc` appearances
+- `T` tour, `Space` / `→` next step, `←` previous, `R` reset, `X` isolate, `H` hide, `U` undo hide, `F` focus, `1`–`5` regions, `[` `]` previous/next region, `Esc` appearances

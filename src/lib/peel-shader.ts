@@ -43,9 +43,11 @@ export function injectPeelShader(
       `#include <clipping_planes_fragment>
        float windowAmt = 0.0;
        if (uHasWindow > 0.5) {
-         windowAmt = 1.0 - smoothstep(uWindowRadius * 0.45, uWindowRadius, distance(vAtlasWorld, uWindowCenter));
+         float dWin = distance(vAtlasWorld, uWindowCenter);
+         windowAmt = 1.0 - smoothstep(uWindowRadius * 0.42, uWindowRadius, dWin);
        }
        float peel = max(uDissection, windowAmt);
-       if (peel > 0.88) discard;`,
+       float peelEdge = fwidth(peel) * 1.25;
+       if (peel > 0.86 + peelEdge) discard;`,
     );
 }

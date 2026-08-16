@@ -107,3 +107,23 @@ export function systemVisibleAtDepth(system: string, depth: number): boolean {
   if (system === "integument") return depth < 0.08;
   return depth >= meta.depth - 0.08;
 }
+
+export const SYSTEM_LOOK: Record<
+  SystemId,
+  { roughness: number; clearcoat: number; sheen: number; metalness: number; env: number }
+> = {
+  integument: { roughness: 0.45, clearcoat: 0.12, sheen: 0.4, metalness: 0, env: 0.9 },
+  muscular: { roughness: 0.46, clearcoat: 0.08, sheen: 0.32, metalness: 0, env: 0.75 },
+  cardiovascular: { roughness: 0.26, clearcoat: 0.28, sheen: 0.08, metalness: 0.03, env: 0.95 },
+  lymphatic: { roughness: 0.4, clearcoat: 0.1, sheen: 0.12, metalness: 0, env: 0.7 },
+  respiratory: { roughness: 0.5, clearcoat: 0.06, sheen: 0.15, metalness: 0, env: 0.65 },
+  digestive: { roughness: 0.42, clearcoat: 0.1, sheen: 0.1, metalness: 0, env: 0.7 },
+  urinary: { roughness: 0.4, clearcoat: 0.12, sheen: 0.08, metalness: 0, env: 0.7 },
+  reproductive: { roughness: 0.36, clearcoat: 0.16, sheen: 0.2, metalness: 0, env: 0.8 },
+  endocrine: { roughness: 0.44, clearcoat: 0.08, sheen: 0.1, metalness: 0, env: 0.65 },
+  sensory: { roughness: 0.3, clearcoat: 0.35, sheen: 0.05, metalness: 0.02, env: 1 },
+  nervous: { roughness: 0.38, clearcoat: 0.14, sheen: 0.12, metalness: 0, env: 0.8 },
+  skeletal: { roughness: 0.3, clearcoat: 0.48, sheen: 0, metalness: 0.05, env: 1.05 },
+  other: { roughness: 0.45, clearcoat: 0.08, sheen: 0, metalness: 0, env: 0.65 },
+};
+

@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useFrame, useThree } from "@react-three/fiber";
+import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
@@ -14,6 +14,7 @@ import {
   isPelvisPoint,
 } from "@/lib/genital-parts";
 import { injectPeelShader } from "@/lib/peel-shader";
+import { closeupAmount, prepSkinMap } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
 
 function inflateGeometry(geometry: THREE.BufferGeometry, amount: number) {
@@ -53,11 +54,16 @@ function usePeelUniforms() {
     uWindowRadius: { value: 0.12 },
     uHasWindow: { value: 0 },
   });
-  useFrame(() => {
+  useFrame((_, delta) => {
     const u = uniforms.current;
-    u.uDissection.value = dissection;
-    u.uWindowRadius.value = peelRadius;
-    u.uHasWindow.value = peelCenter ? 1 : 0;
+    u.uDissection.value = THREE.MathUtils.damp(u.uDissection.value, dissection, 3.4, delta);
+    u.uWindowRadius.value = THREE.MathUtils.damp(
+      u.uWindowRadius.value,
+      peelCenter ? peelRadius : 0,
+      4.2,
+      delta,
+    );
+    u.uHasWindow.value = THREE.MathUtils.damp(u.uHasWindow.value, peelCenter ? 1 : 0, 5, delta);
     if (peelCenter) u.uWindowCenter.value.set(...peelCenter);
   });
   return uniforms;
@@ -74,6 +80,30 @@ export function PhotorealGenitals() {
   const hover = useAtlas((s) => s.hover);
   const appearance = appearanceById(appearanceId ?? "julian");
   const uniforms = usePeelUniforms();
+  const gl = useThree((s) => s.gl);
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls);
+  const closeAmt = useRef(0);
+  const surfaceMats = useRef<THREE.MeshPhysicalMaterial[]>([]);
+
+  const [albedo, normal, roughness] = useTexture([
+    appearance.albedo,
+    appearance.normal,
+    appearance.roughness,
+  ]);
+  const anisotropy = Math.min(16, gl.capabilities.getMaxAnisotropy());
+  const albedoMap = useMemo(
+    () => prepSkinMap(albedo, true, anisotropy, 1.8),
+    [albedo, anisotropy],
+  );
+  const normalMap = useMemo(
+    () => prepSkinMap(normal, false, anisotropy, 2.6),
+    [anisotropy, normal],
+  );
+  const roughnessMap = useMemo(
+    () => prepSkinMap(roughness, false, anisotropy, 1.8),
+    [anisotropy, roughness],
+  );
 
   const geometries = useMemo(() => {
     const out = new Map<string, THREE.BufferGeometry>();
@@ -107,6 +137,18 @@ export function PhotorealGenitals() {
     [uniforms],
   );
 
+  useFrame((_, delta) => {
+    const orbit = controls as unknown as { target?: THREE.Vector3 } | null;
+    const target = orbit?.target ?? new THREE.Vector3(0, 0.8, 0.12);
+    const close = closeupAmount(camera.position.distanceTo(target));
+    closeAmt.current = THREE.MathUtils.damp(closeAmt.current, close, 4, delta);
+    const n = 0.14 + closeAmt.current * 0.32;
+    const mats = surfaceMats.current;
+    for (let i = 0; i < mats.length; i++) {
+      mats[i].normalScale.set(n, n);
+    }
+  });
+
   return (
     <group
       onPointerOver={(event) => {
@@ -129,17 +171,24 @@ export function PhotorealGenitals() {
         return (
           <mesh key={id} name={id} geometry={geometry} visible={visible} castShadow={false} receiveShadow>
             <meshPhysicalMaterial
+              ref={(mat) => {
+                if (!mat) return;
+                if (nude && !surfaceMats.current.includes(mat)) surfaceMats.current.push(mat);
+              }}
               color={color}
+              map={nude ? albedoMap : null}
+              normalMap={nude ? normalMap : null}
+              roughnessMap={nude ? roughnessMap : null}
               roughness={nude ? (id === "FJ3134" ? 0.22 : 0.36) : 0.42}
               metalness={0}
-              sheen={nude ? 0.45 : 0.15}
+              sheen={nude ? 0.5 : 0.15}
               sheenColor={nude ? appearance.sheen : "#e8c4b8"}
-              clearcoat={nude && id === "FJ3134" ? 0.38 : 0.08}
-              clearcoatRoughness={0.35}
+              clearcoat={nude && id === "FJ3134" ? 0.22 : 0.08}
+              clearcoatRoughness={0.42}
               thickness={nude ? 0.55 : 0.2}
               attenuationColor={appearance.attenuation}
               attenuationDistance={0.08}
-              envMapIntensity={0.85}
+              envMapIntensity={0.9}
               side={THREE.DoubleSide}
               emissive={active ? "#c4a46c" : "#000000"}
               emissiveIntensity={selectedId === id ? 0.5 : hoveredId === id ? 0.24 : 0}

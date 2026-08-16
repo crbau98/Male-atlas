@@ -79,8 +79,7 @@ export function ExperienceControls() {
             Living model
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--atlas-muted)]">
-            Stroke the skin. Face and chest raise warmth; pelvis raises vascular arousal.
-            Breath and flush follow your touch.
+            Stroke the skin. Face shows emotion; pelvis shows tumescence, dartos, and flush.
           </p>
         </div>
         <button

@@ -15,6 +15,11 @@ export function LivingHud() {
     <div className="pointer-events-none max-w-[13.5rem] rounded-2xl border border-white/10 bg-[#101218]/82 px-3 py-2 backdrop-blur-md">
       <p className="text-[10px] tracking-[0.18em] text-[#c4a46c] uppercase">Living response</p>
       <p className="mt-1 text-[11px] leading-4 text-[#d8d4cc]">{zoneLabel(touchZone)}</p>
+      <p className="mt-1 text-[10px] leading-4 text-[#b7b3aa]">
+        {arousal > affect
+          ? "Heavier lids, tumescence, scrotum tightening"
+          : "Softer mouth, open eyes, skin warmth"}
+      </p>
       <Meter label="Warmth" value={affect} color="#c4a46c" />
       <Meter label="Arousal" value={arousal} color="#c45a48" />
     </div>

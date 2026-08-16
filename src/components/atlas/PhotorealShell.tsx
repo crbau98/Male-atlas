@@ -10,7 +10,7 @@ import { pickGenitalFromPoint } from "@/lib/genital-parts";
 import { livingRuntime } from "@/lib/living-runtime";
 import { pulseHaptic } from "@/lib/living-touch";
 import { injectPeelShader } from "@/lib/peel-shader";
-import { injectPhotorealSkin } from "@/lib/skin-shader";
+import { injectEyeShader, injectPhotorealSkin } from "@/lib/skin-shader";
 import { closeupAmount } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
@@ -18,6 +18,7 @@ import { haptic } from "@/lib/haptics";
 
 const BODY_URL = "/models/photoreal-male.glb";
 const ALBEDO_URL = "/skins/photoreal-male-albedo.png";
+const FACE_URL = "/skins/photoreal-face.png";
 
 type PointerHit = {
   point: THREE.Vector3;
@@ -63,7 +64,6 @@ export function PhotorealShell() {
   const lastHapticZone = useRef<string | null>(null);
   const eyes = useRef<THREE.Mesh[]>([]);
   const pupil = useRef(0);
-  const eyeBase = useRef(new THREE.Color());
 
   const stopHold = () => {
     if (hold.current) {
@@ -96,6 +96,14 @@ export function PhotorealShell() {
     tex.anisotropy = 8;
     tex.needsUpdate = true;
   });
+  const faceMap = useTexture(FACE_URL, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.flipY = true;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+  });
 
   const uniforms = useRef({
     uDissection: { value: 0 },
@@ -117,19 +125,34 @@ export function PhotorealShell() {
     uMotionAmount: { value: 0 },
     uAffect: { value: 0 },
     uArousal: { value: 0 },
+    uSmile: { value: 0 },
+    uLid: { value: 0 },
+    uJaw: { value: 0 },
+    uBrow: { value: 0 },
+    uFaceMap: { value: faceMap },
+    uPupil: { value: 0 },
+    uIris: { value: new THREE.Color(appearance.eyes) },
   });
 
   const eyeMaterial = useMemo(() => {
-    return new THREE.MeshPhysicalMaterial({
-      color: appearance.eyes,
-      roughness: 0.06,
+    const mat = new THREE.MeshPhysicalMaterial({
+      color: "#f2f0ee",
+      roughness: 0.12,
       metalness: 0,
       clearcoat: 1,
-      clearcoatRoughness: 0.08,
-      envMapIntensity: 1.15,
+      clearcoatRoughness: 0.06,
+      envMapIntensity: 1.2,
       ior: 1.4,
     });
-  }, [appearance.eyes]);
+    mat.onBeforeCompile = (shader) => {
+      injectEyeShader(shader, {
+        uPupil: uniforms.current.uPupil,
+        uIris: uniforms.current.uIris,
+      });
+    };
+    mat.customProgramCacheKey = () => `eye-photo-v1-${appearance.id}`;
+    return mat;
+  }, [appearance.id]);
 
   const material = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
@@ -164,9 +187,14 @@ export function PhotorealShell() {
         uMotionAmount: uniforms.current.uMotionAmount,
         uAffect: uniforms.current.uAffect,
         uArousal: uniforms.current.uArousal,
+        uSmile: uniforms.current.uSmile,
+        uLid: uniforms.current.uLid,
+        uJaw: uniforms.current.uJaw,
+        uBrow: uniforms.current.uBrow,
+        uFaceMap: uniforms.current.uFaceMap,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v2-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v3-${appearance.id}`;
     return mat;
   }, [albedo, appearance]);
 
@@ -216,6 +244,15 @@ export function PhotorealShell() {
     u.uPhysiology.value = phys;
     u.uAffect.value = affect * (phys > 0 ? 1 : 0);
     u.uArousal.value = arousal * (phys > 0 ? 1 : 0);
+    u.uSmile.value = affect * (1 - arousal * 0.42) * (phys > 0 ? 1 : 0);
+    u.uBrow.value = affect * 0.7 * (phys > 0 ? 1 : 0);
+    u.uLid.value = (affect * 0.18 + arousal * 0.78) * (phys > 0 ? 1 : 0);
+    u.uJaw.value = arousal * 0.42 * (phys > 0 ? 1 : 0);
+    const pupilTarget = THREE.MathUtils.clamp(affect * 0.2 + arousal * 0.62, 0, 1) * (phys > 0 ? 1 : 0);
+    pupil.current = THREE.MathUtils.damp(pupil.current, pupilTarget, 5.2, delta);
+    u.uPupil.value = pupil.current;
+    u.uIris.value.set(appearance.eyes);
+    u.uFaceMap.value = faceMap;
     u.uTouchStrength.value = THREE.MathUtils.damp(
       u.uTouchStrength.value,
       touchTarget.current,
@@ -251,18 +288,12 @@ export function PhotorealShell() {
     u.uClose.value = closeAmt.current;
     const mat = skinMat.current;
     if (mat) {
-      mat.envMapIntensity = 0.78 + closeAmt.current * 0.3 + arousal * 0.12;
-      mat.sheen = 0.55 + closeAmt.current * 0.22 + affect * 0.12 + arousal * 0.18;
-      mat.sheenRoughness = THREE.MathUtils.clamp(0.42 - arousal * 0.16, 0.18, 0.5);
+      mat.envMapIntensity = 0.92 + closeAmt.current * 0.28 + arousal * 0.1;
+      mat.sheen = 0.48 + closeAmt.current * 0.2 + affect * 0.1 + arousal * 0.14;
+      mat.sheenRoughness = THREE.MathUtils.clamp(0.4 - arousal * 0.14, 0.18, 0.5);
     }
 
-    const pupilTarget = THREE.MathUtils.clamp(affect * 0.18 + arousal * 0.55, 0, 0.72);
-    pupil.current = THREE.MathUtils.damp(pupil.current, pupilTarget, 5.2, delta);
-    const eyeScale = 1 + pupil.current * 0.11;
-    for (const eye of eyes.current) eye.scale.setScalar(eyeScale);
-    eyeBase.current.set(appearance.eyes);
-    const darken = 1 - pupil.current * 0.42;
-    eyeMaterial.color.copy(eyeBase.current).multiplyScalar(darken);
+    pupil.current = THREE.MathUtils.damp(pupil.current, u.uPupil.value, 5.2, delta);
 
     const now = performance.now();
     if (now - lastLivingSync.current > 90) {
@@ -376,4 +407,5 @@ export function PhotorealShell() {
 
 useGLTF.preload(BODY_URL);
 useTexture.preload(ALBEDO_URL);
+useTexture.preload(FACE_URL);
 useGLTF.preload("/models/systems/reproductive.glb");

@@ -33,15 +33,15 @@ export function zoneGains(zone: TouchZone): { affect: number; arousal: number } 
 export function zoneLabel(zone: TouchZone | null): string {
   switch (zone) {
     case "face":
-      return "Face — warmth, slower breath";
+      return "Face — warmth in the eyes, a softer mouth";
     case "chest":
-      return "Chest — flush and closeness";
+      return "Chest — flush, closer breath, nipples";
     case "belly":
-      return "Belly — settling touch";
+      return "Belly — settling, slower breath";
     case "pelvis":
-      return "Pelvis — vascular arousal";
+      return "Pelvis — tumescence, dartos, vascular flush";
     case "limb":
-      return "Skin — light response";
+      return "Skin — light affect";
     default:
       return "Touch the living surface";
   }

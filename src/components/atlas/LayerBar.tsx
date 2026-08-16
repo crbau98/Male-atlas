@@ -56,6 +56,10 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const selectedId = useAtlas((s) => s.selectedId);
   const showLabels = useAtlas((s) => s.showLabels);
   const toggleLabels = useAtlas((s) => s.toggleLabels);
+  const clipMode = useAtlas((s) => s.clipMode);
+  const setClipMode = useAtlas((s) => s.setClipMode);
+  const contextOn = useAtlas((s) => s.contextOn);
+  const toggleContext = useAtlas((s) => s.toggleContext);
 
   const chip = (on: boolean) =>
     `min-h-11 rounded-full px-3 py-1.5 text-xs ${
@@ -127,6 +131,18 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
         </button>
         <button type="button" onClick={toggleLabels} className={chip(showLabels)}>
           Plates
+        </button>
+        <button type="button" onClick={toggleContext} className={chip(contextOn)}>
+          Context
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "sagittal" ? "off" : "sagittal")} className={chip(clipMode === "sagittal")}>
+          Sagittal
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "coronal" ? "off" : "coronal")} className={chip(clipMode === "coronal")}>
+          Coronal
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "axial" ? "off" : "axial")} className={chip(clipMode === "axial")}>
+          Axial
         </button>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { useIsPhone } from "@/lib/use-is-phone";
 import { AnatomyCallouts } from "./AnatomyCallouts";
 import { AnatomyLayers } from "./AnatomyLayers";
 import { CameraRig } from "./CameraRig";
+import { GhostShell } from "./GhostShell";
 import { Hotspots } from "./Hotspots";
 import { LoadBoundary } from "./LoadBoundary";
 import { LocalStudio } from "./LocalStudio";
@@ -83,6 +84,9 @@ export function AtlasCanvas() {
       <Suspense fallback={null}>
         <LoadBoundary>
           <PhotorealShell />
+        </LoadBoundary>
+        <LoadBoundary>
+          <GhostShell />
         </LoadBoundary>
         <LoadBoundary>
           <PhotorealGenitals />

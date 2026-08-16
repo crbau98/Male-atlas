@@ -81,6 +81,13 @@ export function Inspector() {
           >
             Hide
           </button>
+          <button
+            type="button"
+            onClick={() => useAtlas.getState().toggleContext()}
+            className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
+          >
+            Context
+          </button>
         </div>
       ) : null}
     </aside>

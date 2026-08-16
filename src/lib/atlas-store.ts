@@ -4,6 +4,7 @@ import { create } from "zustand";
 import type { AppearanceId, CatalogPart } from "./types";
 import { SYSTEM_ORDER } from "./systems";
 import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
+import type { ClipMode } from "./clip";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
 
@@ -13,6 +14,8 @@ type AtlasState = {
   explode: number;
   clipY: number;
   clipEnabled: boolean;
+  clipMode: ClipMode;
+  contextOn: boolean;
   peelCenter: Vec3 | null;
   peelRadius: number;
   selectedId: string | null;
@@ -37,6 +40,9 @@ type AtlasState = {
   setExplode: (v: number) => void;
   setClipY: (v: number) => void;
   setClipEnabled: (v: boolean) => void;
+  setClipMode: (v: ClipMode) => void;
+  setContextOn: (v: boolean) => void;
+  toggleContext: () => void;
   setPeel: (center: Vec3 | null, radius?: number) => void;
   setPeelRadius: (radius: number) => void;
   select: (id: string | null, point?: Vec3) => void;
@@ -86,6 +92,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   explode: 0,
   clipY: 1.8,
   clipEnabled: false,
+  clipMode: "off" as ClipMode,
+  contextOn: true,
   peelCenter: null,
   peelRadius: 0.12,
   selectedId: null,
@@ -108,8 +116,16 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
-  setClipY: (clipY) => set({ clipY }),
-  setClipEnabled: (clipEnabled) => set({ clipEnabled }),
+  setClipY: (clipY) => set({ clipY, clipEnabled: true, clipMode: get().clipMode === "off" ? "axial" : get().clipMode }),
+  setClipEnabled: (clipEnabled) =>
+    set({ clipEnabled, clipMode: clipEnabled ? (get().clipMode === "off" ? "axial" : get().clipMode) : "off" }),
+  setClipMode: (clipMode) =>
+    set({
+      clipMode,
+      clipEnabled: clipMode !== "off",
+    }),
+  setContextOn: (contextOn) => set({ contextOn }),
+  toggleContext: () => set({ contextOn: !get().contextOn }),
   setPeel: (peelCenter, peelRadius) =>
     set({ peelCenter, peelRadius: peelRadius ?? get().peelRadius }),
   setPeelRadius: (peelRadius) => set({ peelRadius }),
@@ -225,6 +241,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       explode: 0,
       clipEnabled: false,
       clipY: 1.8,
+      clipMode: "off" as ClipMode,
+      contextOn: true,
       peelCenter: null,
       selectedId: null,
       selectedPoint: null,

@@ -11,6 +11,7 @@ import { injectPeelShader } from "@/lib/peel-shader";
 import { injectPhotorealSkin } from "@/lib/skin-shader";
 import { closeupAmount } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
+import { useClipPlanes } from "@/lib/use-clip-planes";
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -22,6 +23,7 @@ export function PhotorealShell() {
   const setDissection = useAtlas((s) => s.setDissection);
   const setPeelRadius = useAtlas((s) => s.setPeelRadius);
   const lookAt = useAtlas((s) => s.lookAt);
+  const planes = useClipPlanes();
   const hold = useRef<ReturnType<typeof setInterval> | null>(null);
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
@@ -50,6 +52,7 @@ export function PhotorealShell() {
     uEyeColor: { value: new THREE.Color(appearance.eyes) },
     uSheenColor: { value: new THREE.Color(appearance.sheen) },
     uClose: { value: 0 },
+    uInvertPeel: { value: 0 },
   });
 
   const material = useMemo(() => {
@@ -78,7 +81,7 @@ export function PhotorealShell() {
         uClose: uniforms.current.uClose,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v1-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v2-${appearance.id}`;
     return mat;
   }, [appearance]);
 
@@ -131,8 +134,10 @@ export function PhotorealShell() {
       mesh.material = material;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
+      material.clippingPlanes = planes;
+      material.clipShadows = true;
     });
-  }, [gltf.scene, material]);
+  }, [gltf.scene, material, planes]);
 
   if (!photoreal) return null;
 

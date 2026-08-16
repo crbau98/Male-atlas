@@ -11,6 +11,8 @@ import { SYSTEM_LOOK, SYSTEM_META, systemVisibleAtDepth, type SystemId } from "@
 import { tapPart } from "@/lib/tap-part";
 import { useIsPhone } from "@/lib/use-is-phone";
 import { injectIllustrationShader, plateColor, plateKind } from "@/lib/plate-shader";
+import { relatedName } from "@/lib/clip";
+import { useClipPlanes } from "@/lib/use-clip-planes";
 
 const BRAINISH = /brain|gyrus|cortex|hippocamp|thalam|cerebell|brainstem|ventricle of brain|cerebral|white matter|forebrain|midbrain|hindbrain|hypothalamus|epithalamus|pons|medulla/i;
 
@@ -55,13 +57,9 @@ function SystemMeshes({ system }: { system: string }) {
   const brainFocus = useAtlas((s) => s.brainFocus);
   const peelCenter = useAtlas((s) => s.peelCenter);
   const clipEnabled = useAtlas((s) => s.clipEnabled);
-  const clipY = useAtlas((s) => s.clipY);
   const hover = useAtlas((s) => s.hover);
-
-  const clipPlane = useMemo(
-    () => new THREE.Plane(new THREE.Vector3(0, -1, 0), clipY),
-    [clipY],
-  );
+  const contextOn = useAtlas((s) => s.contextOn);
+  const planes = useClipPlanes();
 
   const origins = useRef(new Map<string, THREE.Vector3>());
   const explodeAmt = useRef(0);
@@ -112,11 +110,11 @@ function SystemMeshes({ system }: { system: string }) {
         }
       }
       const cloned = mesh.material as THREE.MeshPhysicalMaterial;
-      cloned.clippingPlanes = clipEnabled ? [clipPlane] : [];
+      cloned.clippingPlanes = planes;
       cloned.clipShadows = true;
     });
     prepared.current = true;
-  }, [clipEnabled, clipPlane, color, gltf.scene, material, system]);
+  }, [clipEnabled, color, gltf.scene, material, planes, system]);
 
   const depthVisible = !photoreal || dissection > 0.02 || Boolean(peelCenter);
   const systemEnabled = systemOn[system] !== false;
@@ -143,18 +141,21 @@ function SystemMeshes({ system }: { system: string }) {
         !genitalHandledElsewhere;
 
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const active = mesh.name === selectedId || mesh.name === hoveredId;
-      mat.emissive = new THREE.Color(active ? "#c4a46c" : "#000000");
-      mat.clippingPlanes = clipEnabled ? [clipPlane] : [];
+      const selectedPart = selectedId ? partsById.get(selectedId) : undefined;
+      const related = Boolean(selectedPart && part && relatedName(selectedPart.name, part.name));
+      const active = mesh.name === selectedId || mesh.name === hoveredId || related;
+      mat.emissive = new THREE.Color(mesh.name === selectedId ? "#c4a46c" : related ? "#8a1f1a" : active ? "#c4a46c" : "#000000");
+      mat.clippingPlanes = planes;
     });
   }, [
     brainFocus,
     clipEnabled,
-    clipPlane,
+    contextOn,
     gltf.scene,
     hidden,
     hoveredId,
     isolated,
+    planes,
     selectedId,
     showSystem,
     system,
@@ -168,6 +169,7 @@ function SystemMeshes({ system }: { system: string }) {
     const meta = SYSTEM_META[system as SystemId] ?? SYSTEM_META.other;
     const appear = THREE.MathUtils.smoothstep(meta.depth - 0.2, meta.depth + 0.04, visDiss.current);
     const opacity = Math.min(1, fade.current) * (0.35 + appear * 0.65);
+    const selectedPart = selectedId ? partsById.get(selectedId) : undefined;
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
@@ -176,11 +178,21 @@ function SystemMeshes({ system }: { system: string }) {
       else mesh.position.set(0, 0, 0);
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
       if (!mat?.isMeshPhysicalMaterial) return;
+      const part = partsById.get(mesh.name);
+      const related = Boolean(selectedPart && part && relatedName(selectedPart.name, part.name));
+      const sameSystem = Boolean(selectedPart && part && selectedPart.system === part.system);
       const ghost = visDiss.current > 0.75 && system !== "skeletal" && system !== "nervous";
-      mat.transparent = ghost || opacity < 0.98;
-      mat.opacity = ghost ? 0.35 * opacity : opacity;
+      let next = ghost ? 0.35 * opacity : opacity;
+      if (contextOn && selectedId && !isolated) {
+        if (mesh.name === selectedId || related) next = Math.max(next, 0.95);
+        else if (sameSystem) next *= 0.55;
+        else next *= 0.12;
+      }
+      mat.transparent = ghost || next < 0.98;
+      mat.opacity = next;
       mat.depthWrite = !mat.transparent;
       if (mesh.name === selectedId) mat.emissiveIntensity = pulse;
+      else if (related) mat.emissiveIntensity = 0.28;
       else if (mesh.name === hoveredId) mat.emissiveIntensity = 0.22;
       else mat.emissiveIntensity = 0;
     });

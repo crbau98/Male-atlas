@@ -11,12 +11,14 @@ export type PeelUniforms = {
   uWindowCenter: IUniform<{ set: (...args: number[]) => void }>;
   uWindowRadius: IUniform<number>;
   uHasWindow: IUniform<number>;
+  uInvertPeel?: IUniform<number>;
 };
 
 export function injectPeelShader(
   shader: Shader,
   uniforms: PeelUniforms & Record<string, IUniform>,
 ) {
+  if (!uniforms.uInvertPeel) uniforms.uInvertPeel = { value: 0 };
   Object.assign(shader.uniforms, uniforms);
   shader.vertexShader = shader.vertexShader
     .replace(
@@ -40,7 +42,8 @@ export function injectPeelShader(
        uniform float uDissection;
        uniform vec3 uWindowCenter;
        uniform float uWindowRadius;
-       uniform float uHasWindow;`,
+       uniform float uHasWindow;
+       uniform float uInvertPeel;`,
     )
     .replace(
       "#include <clipping_planes_fragment>",
@@ -52,6 +55,8 @@ export function injectPeelShader(
        }
        float peel = max(uDissection, windowAmt);
        float peelEdge = fwidth(peel) * 1.25;
-       if (peel > 0.86 + peelEdge) discard;`,
+       if (uInvertPeel > 0.5) {
+         if (peel < 0.86 - peelEdge) discard;
+       } else if (peel > 0.86 + peelEdge) discard;`,
     );
 }

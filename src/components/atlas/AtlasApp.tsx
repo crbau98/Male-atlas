@@ -39,6 +39,8 @@ export function AtlasApp() {
   const goAdjacentRegion = useAtlas((s) => s.goAdjacentRegion);
   const pinSelection = useAtlas((s) => s.pinSelection);
   const toggleLabels = useAtlas((s) => s.toggleLabels);
+  const toggleContext = useAtlas((s) => s.toggleContext);
+  const setClipMode = useAtlas((s) => s.setClipMode);
   const mobileTab = useAtlas((s) => s.mobileTab);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const tourIndex = useAtlas((s) => s.tourIndex);
@@ -80,6 +82,11 @@ export function AtlasApp() {
       if (event.key === "5") goRegion("pelvis");
       if (event.key === "p" || event.key === "P") pinSelection();
       if (event.key === "l" || event.key === "L") toggleLabels();
+      if (event.key === "c" || event.key === "C") toggleContext();
+      if (event.key === "6") setClipMode("sagittal");
+      if (event.key === "7") setClipMode("coronal");
+      if (event.key === "8") setClipMode("axial");
+      if (event.key === "0") setClipMode("off");
       if (event.key === "t" || event.key === "T") {
         const touring = useAtlas.getState().tourIndex !== null;
         if (touring) stopTour();
@@ -88,7 +95,7 @@ export function AtlasApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, pinSelection, prevTour, resetView, setAppearance, stopTour, toggleIsolate, toggleLabels, undoHide]);
+  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, pinSelection, prevTour, resetView, setAppearance, setClipMode, stopTour, toggleContext, toggleIsolate, toggleLabels, undoHide]);
 
   useEffect(() => {
     if (tourIndex === null) return;

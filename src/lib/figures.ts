@@ -27,7 +27,7 @@ export const FIGURES: FigureMark[] = [
     id: "FJ2429",
     label: "Heart",
     plate: "Thorax",
-    position: [0.03, 1.27, 0.05],
+    position: [0.03, 1.27, 0.12],
     regions: ["chest"],
   },
   {
@@ -41,7 +41,7 @@ export const FIGURES: FigureMark[] = [
     id: "FJ2541",
     label: "Trachea",
     plate: "Thorax",
-    position: [0.0, 1.4, 0.04],
+    position: [0.0, 1.4, 0.08],
     regions: ["chest"],
   },
   {

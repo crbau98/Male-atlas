@@ -1,4 +1,4 @@
-const CACHE = "male-atlas-v4";
+const CACHE = "male-atlas-v5";
 const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {

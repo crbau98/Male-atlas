@@ -16,6 +16,7 @@ import {
 import { injectPeelShader } from "@/lib/peel-shader";
 import { injectIllustrationShader } from "@/lib/plate-shader";
 import { tapPart } from "@/lib/tap-part";
+import { useClipPlanes } from "@/lib/use-clip-planes";
 
 function inflateGeometry(geometry: THREE.BufferGeometry, amount: number) {
   const geo = geometry.clone();
@@ -80,6 +81,7 @@ export function PhotorealGenitals() {
   const hover = useAtlas((s) => s.hover);
   const appearance = appearanceById(appearanceId ?? "julian");
   const uniforms = usePeelUniforms();
+  const planes = useClipPlanes();
 
   const geometries = useMemo(() => {
     const out = new Map<string, THREE.BufferGeometry>();
@@ -149,6 +151,8 @@ export function PhotorealGenitals() {
               clearcoat={nude && id === "FJ3134" ? 0.18 : 0.06}
               clearcoatRoughness={0.45}
               envMapIntensity={0.85}
+              clippingPlanes={planes}
+              clipShadows
               side={THREE.DoubleSide}
               emissive={active ? "#c4a46c" : "#000000"}
               emissiveIntensity={selectedId === id ? 0.5 : hoveredId === id ? 0.24 : 0}

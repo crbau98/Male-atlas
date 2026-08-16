@@ -145,6 +145,18 @@ for li, loop in enumerate(mesh.loops):
     uv_f.data[li].uv = (u, v)
     uv_b.data[li].uv = (1.0 - u, v)
 
+# The studio mesh ships as UDIM (u up to ~9). Pack into 0..1 so a single atlas bake covers the body.
+mesh.uv_layers["UVMap"].active = True
+bpy.ops.object.select_all(action="DESELECT")
+body.select_set(True)
+bpy.context.view_layer.objects.active = body
+bpy.ops.object.mode_set(mode="EDIT")
+bpy.ops.mesh.select_all(action="SELECT")
+bpy.ops.uv.select_all(action="SELECT")
+bpy.ops.uv.pack_islands(margin=0.002)
+bpy.ops.object.mode_set(mode="OBJECT")
+print("packed UVMap into 0-1")
+
 # Sample a thigh/abdomen fill for clipped photo regions (lower legs, armpits).
 px = list(front_img.pixels)
 w, h = front_img.size

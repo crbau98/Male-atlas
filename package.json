@@ -9,7 +9,7 @@
     "lint": "eslint",
     "ingest": "python3 scripts/ingest_bodyparts3d.py",
     "ingest:genitals": "python3 scripts/ingest_genitals.py",
-    "export:photoreal": "python3 scripts/prepare_photoreal_photos.py && blender -b -P scripts/export_photoreal_male.py"
+    "export:photoreal": "python3 scripts/prepare_photoreal_photos.py && blender -b -P scripts/export_photoreal_male.py && python3 scripts/postprocess_photoreal_albedo.py"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

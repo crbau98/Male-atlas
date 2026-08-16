@@ -23,6 +23,7 @@ The photographic albedo in `public/skins/photoreal-male-albedo.png` is baked for
 ```bash
 python3 scripts/prepare_photoreal_photos.py
 blender -b -P scripts/export_photoreal_male.py
+python3 scripts/postprocess_photoreal_albedo.py
 ```
 
 ## Skin and portrait stills

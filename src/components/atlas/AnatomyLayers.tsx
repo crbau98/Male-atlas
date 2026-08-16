@@ -32,7 +32,9 @@ export function AnatomyLayers() {
     if (isPelvisPoint(peelCenter) && (s === "reproductive" || s === "urinary")) return true;
     if (peelCenter && peelCenter[1] > 1.35 && (s === "nervous" || s === "skeletal")) return true;
     if (photoreal || phone) {
-      return systemVisibleAtDepth(s, dissection) || dissection >= meta.depth - 0.28;
+      // Keep one adjacent depth band warm, rather than mounting nearly every
+      // system after a shallow peel. This materially reduces phone memory.
+      return systemVisibleAtDepth(s, dissection) || dissection >= meta.depth - 0.14;
     }
     return true;
   });

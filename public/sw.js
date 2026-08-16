@@ -1,4 +1,4 @@
-const CACHE = "male-atlas-v8";
+const CACHE = "male-atlas-v9";
 const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -26,7 +26,16 @@ self.addEventListener("fetch", (event) => {
     url.pathname.startsWith("/_next/");
   if (live) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((cached) => cached || Promise.reject())),
+      caches.open(CACHE).then(async (cache) => {
+        const cached = await cache.match(request);
+        const refresh = fetch(request)
+          .then((response) => {
+            if (response.ok) cache.put(request, response.clone());
+            return response;
+          })
+          .catch(() => cached);
+        return cached || refresh;
+      }),
     );
     return;
   }

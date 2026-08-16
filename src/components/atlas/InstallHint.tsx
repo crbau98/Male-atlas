@@ -4,15 +4,19 @@ import { useEffect, useState } from "react";
 
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
+function isStandalone() {
+  if (typeof window === "undefined") return true;
+  const media = window.matchMedia("(display-mode: standalone)");
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  return media.matches || Boolean(nav.standalone);
+}
+
 export function InstallHint() {
-  const [standalone, setStandalone] = useState(true);
+  const [standalone] = useState(isStandalone);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(display-mode: standalone)");
-    const nav = window.navigator as Navigator & { standalone?: boolean };
-    setStandalone(media.matches || Boolean(nav.standalone));
     const onPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as InstallEvent);

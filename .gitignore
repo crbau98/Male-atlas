@@ -43,3 +43,6 @@ next-env.d.ts
 # BodyParts3D raw download (regenerate with npm run ingest)
 /tmp/
 /data/raw/
+
+# local dev tunnel state (written by scripts/tunnel-watchdog.sh)
+/tunnel-url.txt

@@ -208,7 +208,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   region: "full",
   tourIndex: null,
   demoIndex: null,
-  showLabels: true,
+  showLabels: false,
   pinned: [],
   history: [] as ViewSnap[],
   theme: "dark",
@@ -382,7 +382,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       pelvisFocus: step.region === "pelvis",
       peelCenter: step.peel === undefined ? region.peel : step.peel,
       peelRadius: 0.16,
-      showLabels: true,
+      showLabels: false,
     });
   },
   startDemo: () => {
@@ -443,7 +443,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       demoIndex: null,
       mobileTab: "view",
       pinned: [],
-      showLabels: true,
+      showLabels: false,
       history: [],
       affect: 0,
       arousal: 0,

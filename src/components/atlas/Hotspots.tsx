@@ -66,10 +66,13 @@ function Marker({
 }
 
 export function Hotspots() {
+  const showLabels = useAtlas((s) => s.showLabels);
+  const photoreal = useAtlas((s) => s.photoreal);
   const dissection = useAtlas((s) => s.dissection);
   const isolated = useAtlas((s) => s.isolated);
   const goRegion = useAtlas((s) => s.goRegion);
   if (isolated || dissection > 0.48) return null;
+  if (photoreal && !showLabels) return null;
 
   return (
     <group>

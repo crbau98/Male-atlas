@@ -19,6 +19,8 @@ import { haptic } from "@/lib/haptics";
 const BODY_URL = "/models/photoreal-male.glb";
 const ALBEDO_URL = "/skins/photoreal-male-albedo.png";
 const FACE_URL = "/skins/photoreal-face.png";
+const FRONT_URL = "/skins/photoreal-front.png";
+const BACK_URL = "/skins/photoreal-back.png";
 
 type PointerHit = {
   point: THREE.Vector3;
@@ -104,6 +106,22 @@ export function PhotorealShell() {
     tex.anisotropy = 8;
     tex.needsUpdate = true;
   });
+  const frontMap = useTexture(FRONT_URL, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.flipY = true;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+  });
+  const backMap = useTexture(BACK_URL, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.flipY = true;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+  });
 
   const uniforms = useRef({
     uDissection: { value: 0 },
@@ -130,6 +148,8 @@ export function PhotorealShell() {
     uJaw: { value: 0 },
     uBrow: { value: 0 },
     uFaceMap: { value: faceMap },
+    uFrontMap: { value: frontMap },
+    uBackMap: { value: backMap },
     uPupil: { value: 0 },
     uIris: { value: new THREE.Color(appearance.eyes) },
   });
@@ -158,16 +178,15 @@ export function PhotorealShell() {
     const mat = new THREE.MeshPhysicalMaterial({
       map: albedo,
       color: "#ffffff",
-      roughness: 0.38 + appearance.melanin * 0.08,
+      roughness: 0.72 + appearance.melanin * 0.06,
       metalness: 0,
-      sheen: 0.72,
+      sheen: 0.08,
       sheenColor: new THREE.Color(appearance.sheen),
-      sheenRoughness: 0.42,
-      clearcoat: 0.04,
-      clearcoatRoughness: 0.62,
+      sheenRoughness: 0.72,
+      clearcoat: 0,
       ior: 1.38,
-      specularIntensity: 0.42,
-      envMapIntensity: 0.88,
+      specularIntensity: 0.06,
+      envMapIntensity: 0.08,
       side: THREE.FrontSide,
     });
     mat.onBeforeCompile = (shader) => {
@@ -192,9 +211,11 @@ export function PhotorealShell() {
         uJaw: uniforms.current.uJaw,
         uBrow: uniforms.current.uBrow,
         uFaceMap: uniforms.current.uFaceMap,
+        uFrontMap: uniforms.current.uFrontMap,
+        uBackMap: uniforms.current.uBackMap,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v3-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v5-${appearance.id}`;
     return mat;
   }, [albedo, appearance]);
 
@@ -253,6 +274,8 @@ export function PhotorealShell() {
     u.uPupil.value = pupil.current;
     u.uIris.value.set(appearance.eyes);
     u.uFaceMap.value = faceMap;
+    u.uFrontMap.value = frontMap;
+    u.uBackMap.value = backMap;
     u.uTouchStrength.value = THREE.MathUtils.damp(
       u.uTouchStrength.value,
       touchTarget.current,
@@ -288,9 +311,9 @@ export function PhotorealShell() {
     u.uClose.value = closeAmt.current;
     const mat = skinMat.current;
     if (mat) {
-      mat.envMapIntensity = 0.92 + closeAmt.current * 0.28 + arousal * 0.1;
-      mat.sheen = 0.48 + closeAmt.current * 0.2 + affect * 0.1 + arousal * 0.14;
-      mat.sheenRoughness = THREE.MathUtils.clamp(0.4 - arousal * 0.14, 0.18, 0.5);
+      mat.envMapIntensity = 0.06 + closeAmt.current * 0.04;
+      mat.sheen = 0.06 + affect * 0.04 + arousal * 0.05;
+      mat.sheenRoughness = THREE.MathUtils.clamp(0.62 - arousal * 0.1, 0.4, 0.75);
     }
 
     pupil.current = THREE.MathUtils.damp(pupil.current, u.uPupil.value, 5.2, delta);
@@ -408,4 +431,6 @@ export function PhotorealShell() {
 useGLTF.preload(BODY_URL);
 useTexture.preload(ALBEDO_URL);
 useTexture.preload(FACE_URL);
+useTexture.preload(FRONT_URL);
+useTexture.preload(BACK_URL);
 useGLTF.preload("/models/systems/reproductive.glb");

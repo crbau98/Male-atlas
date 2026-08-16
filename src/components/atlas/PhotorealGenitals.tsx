@@ -28,6 +28,7 @@ import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
 
 const GENITAL_ALBEDO = "/skins/photoreal-genital-albedo.png";
+const FRONT_URL = "/skins/photoreal-front.png";
 
 function usePeelUniforms() {
   const dissection = useAtlas((s) => s.dissection);
@@ -63,6 +64,13 @@ export function PhotorealGenitals() {
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.anisotropy = 8;
   });
+  const frontMap = useTexture(FRONT_URL, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.flipY = true;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+  });
   const appearanceId = useAtlas((s) => s.appearanceId);
   const photoreal = useAtlas((s) => s.photoreal);
   const dissection = useAtlas((s) => s.dissection);
@@ -84,6 +92,7 @@ export function PhotorealGenitals() {
     uPartShaft: { value: 0 },
     uPartGlans: { value: 1 },
     uPartScrotum: { value: 2 },
+    uFrontMap: { value: frontMap as THREE.Texture | null },
   });
 
   const shaftGeo = useMemo(() => createShaftGeometry(), []);
@@ -110,6 +119,7 @@ export function PhotorealGenitals() {
         uArousal: living.current.uArousal,
         uPhysiology: living.current.uPhysiology,
         uPart: living.current.uPartShaft,
+        uFrontMap: living.current.uFrontMap,
       });
     },
     []
@@ -121,6 +131,7 @@ export function PhotorealGenitals() {
         uArousal: living.current.uArousal,
         uPhysiology: living.current.uPhysiology,
         uPart: living.current.uPartGlans,
+        uFrontMap: living.current.uFrontMap,
       });
     },
     []
@@ -132,6 +143,7 @@ export function PhotorealGenitals() {
         uArousal: living.current.uArousal,
         uPhysiology: living.current.uPhysiology,
         uPart: living.current.uPartScrotum,
+        uFrontMap: living.current.uFrontMap,
       });
     },
     []
@@ -162,6 +174,7 @@ export function PhotorealGenitals() {
     const a = flush.current;
     living.current.uArousal.value = a;
     living.current.uPhysiology.value = phys;
+    living.current.uFrontMap.value = frontMap;
     const shaft = shaftGroup.current;
     if (shaft) {
       shaft.rotation.x = THREE.MathUtils.damp(shaft.rotation.x, THREE.MathUtils.lerp(1.22, 0.22, a), 2.4, delta);
@@ -220,39 +233,39 @@ export function PhotorealGenitals() {
               <meshPhysicalMaterial
                 map={albedo}
                 color={appearance.skinTint}
-                roughness={0.38}
+                roughness={0.52}
                 metalness={0}
-                sheen={0.62}
+                sheen={0.18}
                 sheenColor={appearance.sheen}
-                sheenRoughness={0.36}
-                clearcoat={0.06}
-                envMapIntensity={0.95}
+                sheenRoughness={0.55}
+                clearcoat={0}
+                envMapIntensity={0.16}
                 clippingPlanes={planes}
                 clipShadows
                 emissive={selectedId === "FJ3132" || hoveredId === "FJ3132" ? "#c4a46c" : "#000000"}
                 emissiveIntensity={selectedId === "FJ3132" ? 0.4 : hoveredId === "FJ3132" ? 0.18 : 0}
                 onBeforeCompile={onBeforeCompileNude}
-                customProgramCacheKey={() => "genital-shaft-v1"}
+                customProgramCacheKey={() => "genital-shaft-v2"}
               />
             </mesh>
             <mesh name="FJ3134" geometry={glansGeo} position={[0, SHAFT_LENGTH, 0]} castShadow receiveShadow>
               <meshPhysicalMaterial
                 map={albedo}
                 color="#c47872"
-                roughness={0.18}
+                roughness={0.32}
                 metalness={0}
-                sheen={0.8}
+                sheen={0.28}
                 sheenColor={appearance.sheen}
-                sheenRoughness={0.22}
-                clearcoat={0.28}
-                clearcoatRoughness={0.24}
-                envMapIntensity={1.08}
+                sheenRoughness={0.4}
+                clearcoat={0.08}
+                clearcoatRoughness={0.45}
+                envMapIntensity={0.2}
                 clippingPlanes={planes}
                 clipShadows
                 emissive={selectedId === "FJ3134" || hoveredId === "FJ3134" ? "#c4a46c" : "#000000"}
                 emissiveIntensity={selectedId === "FJ3134" ? 0.4 : hoveredId === "FJ3134" ? 0.18 : 0}
                 onBeforeCompile={onBeforeCompileGlans}
-                customProgramCacheKey={() => "genital-glans-v1"}
+                customProgramCacheKey={() => "genital-glans-v2"}
               />
             </mesh>
           </group>
@@ -260,18 +273,18 @@ export function PhotorealGenitals() {
             <meshPhysicalMaterial
               map={albedo}
               color={appearance.skinTint}
-              roughness={0.52}
+              roughness={0.62}
               metalness={0}
-              sheen={0.4}
+              sheen={0.14}
               sheenColor={appearance.sheen}
-              sheenRoughness={0.48}
-              envMapIntensity={0.88}
+              sheenRoughness={0.6}
+              envMapIntensity={0.14}
               clippingPlanes={planes}
               clipShadows
               emissive={selectedId === "scrotum" || hoveredId === "scrotum" ? "#c4a46c" : "#000000"}
               emissiveIntensity={selectedId === "scrotum" ? 0.4 : hoveredId === "scrotum" ? 0.18 : 0}
               onBeforeCompile={onBeforeCompileScrotum}
-              customProgramCacheKey={() => "genital-scrotum-v1"}
+              customProgramCacheKey={() => "genital-scrotum-v2"}
             />
           </mesh>
         </group>
@@ -308,3 +321,4 @@ export function PhotorealGenitals() {
 
 useGLTF.preload("/models/systems/reproductive.glb");
 useTexture.preload(GENITAL_ALBEDO);
+useTexture.preload(FRONT_URL);

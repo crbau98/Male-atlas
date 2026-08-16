@@ -148,7 +148,7 @@ export function AtlasCanvas() {
 
   const preset = LIGHTING_PRESETS[lightingPreset];
   const qualityCap =
-    qualityMode === "high" ? (phone ? 1.5 : 1.8) : qualityMode === "balanced" ? 1 : phone ? 1.25 : 1.5;
+    qualityMode === "high" ? (phone ? 1.75 : 2) : qualityMode === "balanced" ? 1.15 : phone ? 1.5 : 1.75;
   const dpr = Math.min(adaptiveDpr, qualityCap);
   const shadows = !phone || qualityMode === "high";
   const shadowSize = phone ? 512 : qualityMode === "high" ? 1536 : 1024;
@@ -173,7 +173,7 @@ export function AtlasCanvas() {
           localClippingEnabled: true,
           powerPreference: "high-performance",
           preserveDrawingBuffer: false,
-          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMapping: THREE.NoToneMapping,
           toneMappingExposure: preset.exposure,
           outputColorSpace: THREE.SRGBColorSpace,
         }}
@@ -231,7 +231,7 @@ export function AtlasCanvas() {
           enablePan
           enableDamping
           dampingFactor={0.072}
-          autoRotate={!phone && !cameraGoal && !selectedId}
+          autoRotate={false}
           autoRotateSpeed={0.22}
           minDistance={0.14}
           maxDistance={4.6}

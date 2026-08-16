@@ -20,6 +20,8 @@ uniform float uLid;
 uniform float uJaw;
 uniform float uBrow;
 uniform sampler2D uFaceMap;
+uniform sampler2D uFrontMap;
+uniform sampler2D uBackMap;
 
 float atlasHash(vec3 p) {
   p = fract(p * 0.3183099 + vec3(0.11, 0.17, 0.23));
@@ -116,24 +118,45 @@ export function injectPhotorealSkin(
        vec3 w = vAtlasWorld;
        float ax = abs(w.x);
        vec3 nrm = normalize(vAtlasNormal);
-       float bump = atlasFbm(w * 280.0);
-       nrm = normalize(nrm + vec3(dFdx(bump), dFdy(bump), 0.0) * (0.5 + uClose * 0.55));
        vec3 baked = diffuseColor.rgb;
        float bakedLuma = dot(baked, vec3(0.299, 0.587, 0.114));
-       vec3 photoTint = vec3(0.953, 0.780, 0.690);
-       vec3 skin = bakedLuma < 0.035 ? uSkinTint : baked;
-       float tintMix = clamp(abs(uMelanin - 0.16) * 1.4, 0.0, 0.85);
-       skin = mix(skin, skin * (uSkinTint / max(photoTint, vec3(0.08))), tintMix);
-       skin *= 0.99 + (atlasFbm(w * 6.2) - 0.5) * 0.028;
-       vec2 faceUV = vec2(0.5 - w.x * 4.55, clamp((w.y - 1.452) / 0.282, 0.0, 1.0));
-       float faceMask = atlasSoft(w.y, 1.478, 1.505)
-         * (1.0 - atlasSoft(w.y, 1.718, 1.738))
-         * atlasSoft(w.z, 0.028, 0.068)
-         * (1.0 - atlasSoft(ax, 0.086, 0.112));
+       float bakedSat = max(max(baked.r, baked.g), baked.b) - min(min(baked.r, baked.g), baked.b);
+       float bakeOk = step(0.08, bakedLuma) * (1.0 - step(0.82, bakedLuma)) * step(0.05, bakedSat);
+       vec3 limb = uSkinTint * (0.9 + atlasFbm(w * 24.0) * 0.16);
+       vec3 skin = mix(limb, baked, bakeOk);
+       vec2 photoUV = vec2(
+         clamp(0.515 + w.x * 0.95, 0.0, 1.0),
+         clamp(-0.343 + 0.734 * w.y, 0.0, 1.0)
+       );
+       vec3 frontC = texture2D(uFrontMap, photoUV).rgb;
+       vec3 backC = texture2D(uBackMap, vec2(1.0 - photoUV.x, photoUV.y)).rgb;
+       float frontLuma = dot(frontC, vec3(0.299, 0.587, 0.114));
+       float backLuma = dot(backC, vec3(0.299, 0.587, 0.114));
+       float frontSat = max(max(frontC.r, frontC.g), frontC.b) - min(min(frontC.r, frontC.g), frontC.b);
+       float backSat = max(max(backC.r, backC.g), backC.b) - min(min(backC.r, backC.g), backC.b);
+       float frontLive = step(0.04, frontLuma) * step(0.045, frontSat) * (1.0 - step(0.84, frontLuma));
+       float backLive = step(0.04, backLuma) * step(0.045, backSat) * (1.0 - step(0.84, backLuma));
+       frontLive *= 1.0 - step(frontLuma, 0.36) * step(frontC.r + 0.03, frontC.b);
+       backLive *= 1.0 - step(backLuma, 0.36) * step(backC.r + 0.03, backC.b);
+       float wrap = smoothstep(-0.22, 0.18, nrm.z);
+       float frontAmt = wrap * frontLive;
+       float backAmt = (1.0 - wrap) * backLive;
+       skin = mix(skin, backC, backAmt);
+       skin = mix(skin, frontC, frontAmt);
+       vec2 faceUV = vec2(0.5 - w.x * 5.15, clamp((w.y - 1.392) / 0.338, 0.0, 1.0));
+       float faceMask = atlasSoft(w.y, 1.468, 1.498)
+         * (1.0 - atlasSoft(w.y, 1.718, 1.742))
+         * atlasSoft(w.z, 0.018, 0.05)
+         * (1.0 - atlasSoft(ax, 0.088, 0.118));
        vec3 facePhoto = texture2D(uFaceMap, faceUV).rgb;
-       float faceLive = step(0.05, dot(facePhoto, vec3(0.333)));
-       skin = mix(skin, facePhoto, faceMask * faceLive * 0.82);
-       vec3 flush = mix(skin, uAttenuation, 0.48);
+       float faceLuma = dot(facePhoto, vec3(0.299, 0.587, 0.114));
+       float faceSat = max(max(facePhoto.r, facePhoto.g), facePhoto.b) - min(min(facePhoto.r, facePhoto.g), facePhoto.b);
+       float faceLive = step(0.05, faceLuma) * step(0.04, faceSat) * (1.0 - step(0.9, faceLuma));
+       skin = mix(skin, facePhoto, faceMask * faceLive);
+       vec3 photoTint = vec3(0.82, 0.64, 0.54);
+       float tintMix = clamp(abs(uMelanin - 0.16) * 1.15, 0.0, 0.7);
+       skin = mix(skin, skin * (uSkinTint / max(photoTint, vec3(0.08))), tintMix);
+       vec3 flush = mix(skin, uAttenuation, 0.42);
        float touchDistance = distance(w, uTouchPoint);
        float touchResponse = exp(-pow(touchDistance / 0.09, 2.0)) * uTouchStrength * uPhysiology;
        float goose = step(0.78, atlasHash(floor(w * 220.0))) * touchResponse;
@@ -142,37 +165,22 @@ export function injectPhotorealSkin(
          * atlasSoft(w.z, 0.02, 0.09);
        float strand = 0.55 + 0.45 * smoothstep(0.25, 0.9, abs(sin(w.x * 68.0 + w.z * 16.0 + w.y * 7.0)));
        vec3 col = skin;
-       col = mix(col, uHairColor, pubic * (0.32 + 0.38 * strand) * (0.35 + 0.65 * uMelanin));
-       float stubble = atlasSoft(w.y, 1.50, 1.525) * (1.0 - atlasSoft(w.y, 1.575, 1.605))
-         * atlasSoft(w.z, 0.02, 0.08) * atlasSoft(ax, 0.01, 0.085);
-       col = mix(col, uHairColor, stubble * strand * (0.22 + 0.38 * uMelanin));
-       float lips = atlasSoft(w.y, 1.528, 1.538) * (1.0 - atlasSoft(w.y, 1.558, 1.57))
-         * (1.0 - atlasSoft(ax, 0.018, 0.032)) * atlasSoft(w.z, 0.07, 0.10);
-       col = mix(col, mix(col, vec3(0.62, 0.26, 0.30), 0.55), lips * (0.55 + uAffect * 0.35));
-       col = mix(col, mix(col, uAttenuation, 0.68), touchResponse * 0.55);
+       col = mix(col, uHairColor, pubic * (0.28 + 0.34 * strand) * (0.35 + 0.65 * uMelanin));
+       col = mix(col, mix(col, uAttenuation, 0.55), touchResponse * 0.4);
        float cheek = atlasSoft(w.y, 1.52, 1.545) * (1.0 - atlasSoft(w.y, 1.60, 1.62))
          * atlasSoft(ax, 0.018, 0.028) * (1.0 - atlasSoft(ax, 0.062, 0.078))
          * atlasSoft(w.z, 0.04, 0.10);
-       float lidFlush = atlasSoft(w.y, 1.588, 1.598) * (1.0 - atlasSoft(w.y, 1.618, 1.628))
-         * atlasSoft(ax, 0.012, 0.022) * (1.0 - atlasSoft(ax, 0.048, 0.058));
        float chestFlush = atlasSoft(w.y, 1.16, 1.22) * (1.0 - atlasSoft(w.y, 1.38, 1.44))
          * atlasSoft(w.z, 0.02, 0.08) * (1.0 - atlasSoft(ax, 0.16, 0.22));
        float pelvicFlush = atlasSoft(w.y, 0.78, 0.84) * (1.0 - atlasSoft(w.y, 0.96, 1.02))
          * atlasSoft(w.z, 0.0, 0.05) * (1.0 - atlasSoft(ax, 0.12, 0.18));
-       col = mix(col, mix(col, uAttenuation, 0.55), cheek * uAffect * 0.78);
-       col = mix(col, col * 0.72, lidFlush * uAffect * 0.45);
-       col = mix(col, mix(col, uAttenuation, 0.5), chestFlush * (uAffect * 0.42 + uArousal * 0.22));
-       col = mix(col, mix(col, vec3(0.62, 0.22, 0.28), 0.4), pelvicFlush * uArousal * 0.48);
-       col *= 1.0 + goose * 0.035;
-       if (uClose > 0.45) {
-         col *= 1.0 + (atlasFbm(w * 26.0) - 0.5) * 0.016 * uClose;
-       }
+       col = mix(col, mix(col, uAttenuation, 0.45), cheek * uAffect * 0.55);
+       col = mix(col, mix(col, uAttenuation, 0.4), chestFlush * (uAffect * 0.28 + uArousal * 0.16));
+       col = mix(col, mix(col, vec3(0.55, 0.22, 0.26), 0.35), pelvicFlush * uArousal * 0.32);
+       col *= 1.0 + goose * 0.02;
        float ndv = abs(dot(nrm, normalize(cameraPosition - w)));
-       float wrap = 0.8 + 0.2 * clamp(dot(nrm, vec3(0.18, 0.92, 0.32)), 0.0, 1.0);
-       float sss = pow(1.0 - ndv, 1.55);
-       col *= wrap;
-       col = mix(col, flush, sss * (0.14 + 0.14 * (1.0 - uMelanin) + uAffect * 0.1));
-       col = mix(col, uSheenColor, 0.02 + uClose * 0.035 + uArousal * 0.045);
+       float sss = pow(1.0 - ndv, 1.7);
+       col = mix(col, flush, sss * (0.03 + 0.04 * (1.0 - uMelanin) + uAffect * 0.04));
        diffuseColor.rgb = col;`,
     )
     .replace(
@@ -188,6 +196,11 @@ export function injectPhotorealSkin(
          0.08,
          0.95
        );`,
+    )
+    .replace(
+      "#include <tonemapping_fragment>",
+      `#include <tonemapping_fragment>
+       gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.9);`,
     );
 }
 

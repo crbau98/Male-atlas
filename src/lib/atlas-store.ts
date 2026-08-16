@@ -5,6 +5,7 @@ import type { AppearanceId, CatalogPart } from "./types";
 import { SYSTEM_ORDER } from "./systems";
 import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
 import type { ClipMode } from "./clip";
+import { DEMO } from "./demo";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
 
@@ -16,6 +17,9 @@ type AtlasState = {
   clipEnabled: boolean;
   clipMode: ClipMode;
   contextOn: boolean;
+  pathwayOn: boolean;
+  xrayOn: boolean;
+  familyOn: boolean;
   peelCenter: Vec3 | null;
   peelRadius: number;
   selectedId: string | null;
@@ -33,6 +37,7 @@ type AtlasState = {
   cameraGoal: CameraGoal | null;
   region: RegionId;
   tourIndex: number | null;
+  demoIndex: number | null;
   showLabels: boolean;
   pinned: Array<{ id: string; point: Vec3 }>;
   setAppearance: (id: AppearanceId | null) => void;
@@ -43,6 +48,9 @@ type AtlasState = {
   setClipMode: (v: ClipMode) => void;
   setContextOn: (v: boolean) => void;
   toggleContext: () => void;
+  togglePathway: () => void;
+  toggleXray: () => void;
+  toggleFamily: () => void;
   setPeel: (center: Vec3 | null, radius?: number) => void;
   setPeelRadius: (radius: number) => void;
   select: (id: string | null, point?: Vec3) => void;
@@ -66,6 +74,11 @@ type AtlasState = {
   prevTour: () => void;
   stopTour: () => void;
   applyTourStep: (index: number) => void;
+  startDemo: () => void;
+  nextDemo: () => void;
+  prevDemo: () => void;
+  stopDemo: () => void;
+  applyDemoStep: (index: number) => void;
   resetView: () => void;
   toggleLabels: () => void;
   pinSelection: () => void;
@@ -94,6 +107,9 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   clipEnabled: false,
   clipMode: "off" as ClipMode,
   contextOn: true,
+  pathwayOn: true,
+  xrayOn: false,
+  familyOn: false,
   peelCenter: null,
   peelRadius: 0.12,
   selectedId: null,
@@ -111,6 +127,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   cameraGoal: null,
   region: "full",
   tourIndex: null,
+  demoIndex: null,
   showLabels: true,
   pinned: [],
   setAppearance: (id) => set({ appearanceId: id }),
@@ -123,9 +140,16 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     set({
       clipMode,
       clipEnabled: clipMode !== "off",
+      clipY: clipMode === "quarter" && get().clipY > 1.65 ? 1.22 : get().clipY,
     }),
   setContextOn: (contextOn) => set({ contextOn }),
   toggleContext: () => set({ contextOn: !get().contextOn }),
+  togglePathway: () => set({ pathwayOn: !get().pathwayOn }),
+  toggleXray: () => set({ xrayOn: !get().xrayOn }),
+  toggleFamily: () => {
+    if (get().familyOn) set({ familyOn: false, isolated: false });
+    else set({ familyOn: true, isolated: true });
+  },
   setPeel: (peelCenter, peelRadius) =>
     set({ peelCenter, peelRadius: peelRadius ?? get().peelRadius }),
   setPeelRadius: (peelRadius) => set({ peelRadius }),
@@ -133,10 +157,11 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     set({
       selectedId,
       isolated: false,
+      familyOn: false,
       selectedPoint: selectedId ? (point ?? get().selectedPoint) : null,
     }),
   hover: (hoveredId) => set({ hoveredId }),
-  toggleIsolate: () => set({ isolated: !get().isolated }),
+  toggleIsolate: () => set({ isolated: !get().isolated, familyOn: false }),
   hideSelected: () => {
     const id = get().selectedId;
     if (!id) return;
@@ -146,6 +171,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       hidden,
       selectedId: null,
       isolated: false,
+      familyOn: false,
       hiddenStack: [...get().hiddenStack, id],
     });
   },
@@ -155,7 +181,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     if (!id) return;
     const hidden = new Set(get().hidden);
     hidden.delete(id);
-    set({ hidden, hiddenStack: stack, selectedId: id, isolated: false });
+    set({ hidden, hiddenStack: stack, selectedId: id, isolated: false, familyOn: false });
   },
   focusSelection: () => {
     const point = get().selectedPoint ?? get().peelCenter;
@@ -199,8 +225,10 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     }
     set({
       tourIndex: index,
+      demoIndex: null,
       photoreal: true,
       isolated: false,
+      familyOn: false,
       selectedId: null,
       ...applyRegionPatch(step.region),
       explode: step.explode,
@@ -223,6 +251,53 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     get().applyTourStep(current - 1);
   },
   stopTour: () => set({ tourIndex: null }),
+  applyDemoStep: (index) => {
+    const step = DEMO[index];
+    if (!step) {
+      set({ demoIndex: null, xrayOn: false, clipMode: "off", clipEnabled: false, explode: 0 });
+      get().goRegion("full");
+      return;
+    }
+    const region = REGIONS[step.region];
+    set({
+      demoIndex: index,
+      tourIndex: null,
+      photoreal: true,
+      isolated: false,
+      familyOn: false,
+      selectedId: null,
+      selectedPoint: null,
+      xrayOn: Boolean(step.xray),
+      clipMode: step.clipMode,
+      clipEnabled: step.clipMode !== "off",
+      clipY: step.clipY ?? get().clipY,
+      explode: step.explode,
+      dissection: step.dissection,
+      region: step.region,
+      cameraGoal: { eye: region.eye, target: region.target },
+      brainFocus: step.region === "head",
+      pelvisFocus: step.region === "pelvis",
+      peelCenter: step.peel === undefined ? region.peel : step.peel,
+      peelRadius: 0.16,
+      showLabels: true,
+    });
+  },
+  startDemo: () => get().applyDemoStep(0),
+  nextDemo: () => {
+    const current = get().demoIndex ?? -1;
+    get().applyDemoStep(current + 1);
+  },
+  prevDemo: () => {
+    const current = get().demoIndex;
+    if (current === null) return;
+    if (current <= 0) {
+      get().stopDemo();
+      get().goRegion("full");
+      return;
+    }
+    get().applyDemoStep(current - 1);
+  },
+  stopDemo: () => set({ demoIndex: null, xrayOn: false }),
   toggleLabels: () => set({ showLabels: !get().showLabels }),
   pinSelection: () => {
     const id = get().selectedId;
@@ -243,6 +318,9 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       clipY: 1.8,
       clipMode: "off" as ClipMode,
       contextOn: true,
+      pathwayOn: true,
+      xrayOn: false,
+      familyOn: false,
       peelCenter: null,
       selectedId: null,
       selectedPoint: null,
@@ -256,6 +334,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       cameraGoal: { eye: REGIONS.full.eye, target: REGIONS.full.target },
       region: "full",
       tourIndex: null,
+      demoIndex: null,
       mobileTab: "view",
       pinned: [],
       showLabels: true,

@@ -17,5 +17,5 @@ export function LocalStudio() {
     return rt.texture;
   }, [gl]);
 
-  return <Environment map={texture} environmentIntensity={0.9} />;
+  return <Environment map={texture} environmentIntensity={1.05} />;
 }

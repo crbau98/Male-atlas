@@ -60,6 +60,13 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const setClipMode = useAtlas((s) => s.setClipMode);
   const contextOn = useAtlas((s) => s.contextOn);
   const toggleContext = useAtlas((s) => s.toggleContext);
+  const pathwayOn = useAtlas((s) => s.pathwayOn);
+  const togglePathway = useAtlas((s) => s.togglePathway);
+  const xrayOn = useAtlas((s) => s.xrayOn);
+  const toggleXray = useAtlas((s) => s.toggleXray);
+  const demoIndex = useAtlas((s) => s.demoIndex);
+  const startDemo = useAtlas((s) => s.startDemo);
+  const stopDemo = useAtlas((s) => s.stopDemo);
 
   const chip = (on: boolean) =>
     `min-h-11 rounded-full px-3 py-1.5 text-xs ${
@@ -101,12 +108,11 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
             {REGIONS[id].label}
           </button>
         ))}
-        <button
-          type="button"
-          onClick={() => (tourIndex === null ? startTour() : stopTour())}
-          className={chip(tourIndex !== null)}
-        >
+        <button type="button" onClick={() => (tourIndex === null ? startTour() : stopTour())} className={chip(tourIndex !== null)}>
           Tour
+        </button>
+        <button type="button" onClick={() => (demoIndex === null ? startDemo() : stopDemo())} className={chip(demoIndex !== null)}>
+          Demo
         </button>
         <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
           Nude
@@ -135,6 +141,12 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
         <button type="button" onClick={toggleContext} className={chip(contextOn)}>
           Context
         </button>
+        <button type="button" onClick={togglePathway} className={chip(pathwayOn)}>
+          Pathway
+        </button>
+        <button type="button" onClick={toggleXray} className={chip(xrayOn)}>
+          X-ray
+        </button>
         <button type="button" onClick={() => setClipMode(clipMode === "sagittal" ? "off" : "sagittal")} className={chip(clipMode === "sagittal")}>
           Sagittal
         </button>
@@ -143,6 +155,12 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
         </button>
         <button type="button" onClick={() => setClipMode(clipMode === "axial" ? "off" : "axial")} className={chip(clipMode === "axial")}>
           Axial
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "quarter" ? "off" : "quarter")} className={chip(clipMode === "quarter")}>
+          Quarter
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "hemi" ? "off" : "hemi")} className={chip(clipMode === "hemi")}>
+          Hemi
         </button>
       </div>
     </div>

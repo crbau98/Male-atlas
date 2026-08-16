@@ -81,7 +81,7 @@ export function PhotorealShell() {
         uClose: uniforms.current.uClose,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v2-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v3-${appearance.id}`;
     return mat;
   }, [appearance]);
 

@@ -12,6 +12,7 @@ import { tapPart } from "@/lib/tap-part";
 import { useIsPhone } from "@/lib/use-is-phone";
 import { injectIllustrationShader, plateColor, plateKind } from "@/lib/plate-shader";
 import { relatedName } from "@/lib/clip";
+import { samePathway } from "@/lib/pathways";
 import { useClipPlanes } from "@/lib/use-clip-planes";
 
 const BRAINISH = /brain|gyrus|cortex|hippocamp|thalam|cerebell|brainstem|ventricle of brain|cerebral|white matter|forebrain|midbrain|hindbrain|hypothalamus|epithalamus|pons|medulla/i;
@@ -59,6 +60,9 @@ function SystemMeshes({ system }: { system: string }) {
   const clipEnabled = useAtlas((s) => s.clipEnabled);
   const hover = useAtlas((s) => s.hover);
   const contextOn = useAtlas((s) => s.contextOn);
+  const pathwayOn = useAtlas((s) => s.pathwayOn);
+  const xrayOn = useAtlas((s) => s.xrayOn);
+  const familyOn = useAtlas((s) => s.familyOn);
   const planes = useClipPlanes();
 
   const origins = useRef(new Map<string, THREE.Vector3>());
@@ -130,7 +134,11 @@ function SystemMeshes({ system }: { system: string }) {
       const part = partsById.get(mesh.name);
       const isBrain = part ? BRAINISH.test(part.name) : false;
       const hiddenPart = hidden.has(mesh.name);
-      const isolatedAway = isolated && selectedId && mesh.name !== selectedId;
+      const selectedPart = selectedId ? partsById.get(selectedId) : undefined;
+      const related = Boolean(selectedPart && part && relatedName(selectedPart.name, part.name));
+      const pathHit = Boolean(selectedPart && part && samePathway(selectedPart.name, part.name));
+      const familyKeep = familyOn && (related || pathHit);
+      const isolatedAway = isolated && selectedId && mesh.name !== selectedId && !familyKeep;
       const brainAway = brainFocus && system === "nervous" ? !isBrain : brainFocus && system !== "nervous";
       const genitalHandledElsewhere = GENITAL_MESH_IDS.has(mesh.name);
       mesh.visible =
@@ -141,24 +149,27 @@ function SystemMeshes({ system }: { system: string }) {
         !genitalHandledElsewhere;
 
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
-      const selectedPart = selectedId ? partsById.get(selectedId) : undefined;
-      const related = Boolean(selectedPart && part && relatedName(selectedPart.name, part.name));
-      const active = mesh.name === selectedId || mesh.name === hoveredId || related;
-      mat.emissive = new THREE.Color(mesh.name === selectedId ? "#c4a46c" : related ? "#8a1f1a" : active ? "#c4a46c" : "#000000");
+      const active = mesh.name === selectedId || mesh.name === hoveredId || related || pathHit;
+      mat.emissive = new THREE.Color(
+        mesh.name === selectedId ? "#c4a46c" : related ? "#8a1f1a" : pathHit ? "#3d6ea8" : active ? "#c4a46c" : "#000000",
+      );
       mat.clippingPlanes = planes;
     });
   }, [
     brainFocus,
     clipEnabled,
     contextOn,
+    familyOn,
     gltf.scene,
     hidden,
     hoveredId,
     isolated,
+    pathwayOn,
     planes,
     selectedId,
     showSystem,
     system,
+    xrayOn,
   ]);
 
   useFrame((state, delta) => {
@@ -180,19 +191,24 @@ function SystemMeshes({ system }: { system: string }) {
       if (!mat?.isMeshPhysicalMaterial) return;
       const part = partsById.get(mesh.name);
       const related = Boolean(selectedPart && part && relatedName(selectedPart.name, part.name));
+      const pathHit = Boolean(pathwayOn && selectedPart && part && samePathway(selectedPart.name, part.name));
       const sameSystem = Boolean(selectedPart && part && selectedPart.system === part.system);
       const ghost = visDiss.current > 0.75 && system !== "skeletal" && system !== "nervous";
       let next = ghost ? 0.35 * opacity : opacity;
       if (contextOn && selectedId && !isolated) {
         if (mesh.name === selectedId || related) next = Math.max(next, 0.95);
+        else if (pathHit) next = Math.max(next * 0.9, 0.72);
         else if (sameSystem) next *= 0.55;
         else next *= 0.12;
       }
-      mat.transparent = ghost || next < 0.98;
+      if (xrayOn && mesh.name !== selectedId && !related && !pathHit) next *= 0.08;
+      else if (xrayOn && pathHit && mesh.name !== selectedId) next = Math.max(next, 0.55);
+      mat.transparent = ghost || xrayOn || next < 0.98;
       mat.opacity = next;
       mat.depthWrite = !mat.transparent;
       if (mesh.name === selectedId) mat.emissiveIntensity = pulse;
       else if (related) mat.emissiveIntensity = 0.28;
+      else if (pathHit) mat.emissiveIntensity = 0.2 + Math.sin(state.clock.elapsedTime * 2.2) * 0.06;
       else if (mesh.name === hoveredId) mat.emissiveIntensity = 0.22;
       else mat.emissiveIntensity = 0;
     });

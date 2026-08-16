@@ -46,8 +46,8 @@ export function FigurePlate() {
         </p>
       ) : (
         <p className="mt-1 text-[11px] leading-5 text-[#4a4338]">
-          Tap a numbered structure. Sagittal / coronal cut a textbook section.
-          Context dims neighbors so the selected organ reads as the figure.
+          Tap a numbered structure. Quarter and Hemi are textbook cuts. Pathway
+          keeps the related tree lit; X-ray ghosts the rest.
         </p>
       )}
       {legend.length > 0 ? (

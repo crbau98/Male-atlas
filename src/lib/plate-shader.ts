@@ -105,6 +105,14 @@ export function injectIllustrationShader(shader: Shader, kind: PlateKind) {
        if (uPlateKind > 0.5 && uPlateKind < 1.5) {
          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.96, 0.93, 0.86), 0.12);
        }
+       if (uPlateKind > 1.5 && uPlateKind < 3.5) {
+         float lumen = pow(abs(dot(pn, normalize(cameraPosition - vAtlasWorld))), 3.2);
+         diffuseColor.rgb = mix(diffuseColor.rgb, mix(diffuseColor.rgb, vec3(1.0), 0.18), lumen * 0.45);
+       }
+       if (uPlateKind > 4.5 && uPlateKind < 6.5) {
+         float organ = 0.5 + 0.5 * sin(vAtlasWorld.x * 28.0 + vAtlasWorld.y * 18.0);
+         diffuseColor.rgb *= mix(0.94, 1.06, organ);
+       }
        diffuseColor.rgb *= wrap;
        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.16, 0.11, 0.08), rim * 0.58);
        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.88, 0.78), 0.07);`,

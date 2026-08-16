@@ -107,9 +107,14 @@ export function injectPhotorealSkin(
          * atlasSoft(w.z, 0.10, 0.16)
          * (0.28 + 0.72 * uMelanin);
 
-       float scalp = atlasSoft(w.y, 1.58, 1.64)
-         * (1.0 - atlasSoft(length(vec2(w.x, w.z - 0.075)), 0.088, 0.118));
+       float scalp = atlasSoft(w.y, 1.57, 1.62)
+         * (1.0 - atlasSoft(length(vec2(w.x, w.z - 0.075)), 0.092, 0.128));
+       float hairCap = atlasSoft(w.y, 1.60, 1.64)
+         * (1.0 - atlasSoft(length(vec2(w.x * 1.05, w.z - 0.06)), 0.078, 0.112));
        float strand = 0.55 + 0.45 * smoothstep(0.25, 0.9, abs(sin(w.x * 68.0 + w.z * 16.0 + w.y * 7.0)));
+       float strand2 = 0.5 + 0.5 * smoothstep(0.2, 0.85, abs(sin(w.x * 140.0 - w.z * 38.0 + w.y * 22.0)));
+       float hairVol = clamp(scalp * 0.82 + hairCap * 0.55, 0.0, 1.0);
+       vec3 hairRoot = uHairColor * 0.72;
 
        float nippleL = 1.0 - atlasSoft(length(w - vec3(-0.068, 1.271, 0.225)), 0.011, 0.020);
        float nippleR = 1.0 - atlasSoft(length(w - vec3( 0.069, 1.271, 0.224)), 0.011, 0.020);
@@ -143,7 +148,7 @@ export function injectPhotorealSkin(
        col = mix(col, palmCol, clamp(palm * 0.55, 0.0, 1.0));
        col = mix(col, scrotumCol, scrotum * 0.88);
        col = mix(col, scrotumCol * 0.72, raphe);
-       col = mix(col, uHairColor, scalp * (0.82 + 0.18 * strand));
+       col = mix(col, mix(hairRoot, uHairColor, strand2), hairVol * (0.88 + 0.12 * strand));
        col = mix(col, uHairColor, pubic * (0.5 + 0.4 * strand));
 
        float pore = 0.0;

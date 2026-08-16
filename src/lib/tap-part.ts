@@ -12,6 +12,10 @@ export function tapPart(id: string, point: Vec3) {
   lastTap.id = id;
   lastTap.t = now;
   atlas.select(id, point);
+  if (atlas.photoreal) {
+    atlas.setPeel(point, Math.max(atlas.peelRadius, 0.13));
+    if (atlas.dissection < 0.14) atlas.setDissection(0.22);
+  }
   if (doubled) {
     if (!useAtlas.getState().isolated) atlas.toggleIsolate();
     useAtlas.setState({ cameraGoal: { target: point, distance: 0.3 } });

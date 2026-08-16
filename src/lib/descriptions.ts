@@ -40,7 +40,17 @@ const DESCRIPTIONS: Record<string, string> = {
   "spinal cord": "Central nervous column inside the vertebral canal, giving off paired spinal nerves.",
   diaphragm: "Dome-shaped skeletal muscle that separates thorax from abdomen and drives quiet breathing.",
   trachea: "Cartilaginous airway from the larynx to the main bronchi.",
+  gallbladder: "Pear-shaped biliary reservoir under the liver that concentrates bile between meals.",
+  "hepatic portal vein": "Confluence of mesenteric and splenic venous blood delivering nutrients to the liver.",
+  "superior vena cava": "Great vein returning blood from the head, neck, and upper limbs to the right atrium.",
+  "inferior vena cava": "Great vein returning blood from the abdomen, pelvis, and lower limbs to the right atrium.",
   esophagus: "Muscular tube posterior to the trachea, carrying food to the stomach.",
+  "transverse colon": "Horizontal colon crossing the abdomen below the stomach, linking ascending and descending colon.",
+  "left common carotid artery": "Left-sided artery from the aortic arch supplying the head and neck.",
+  "right main bronchus": "Shorter, more vertical airway into the right lung, a common path for aspirated material.",
+  "left main bronchus": "Longer, more horizontal airway into the left lung, passing under the aortic arch.",
+  "anterior chamber of left eyeball": "Aqueous-filled space of the left eye between cornea and iris.",
+  "caudate lobe of liver": "Posterior liver segment between the IVC and ligamentum venosum, independently vascularized.",
   thyroid: "Endocrine gland on the anterior trachea that sets basal metabolic rate.",
 };
 

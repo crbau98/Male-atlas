@@ -40,10 +40,17 @@ export function AtlasApp() {
   const pinSelection = useAtlas((s) => s.pinSelection);
   const toggleLabels = useAtlas((s) => s.toggleLabels);
   const toggleContext = useAtlas((s) => s.toggleContext);
+  const togglePathway = useAtlas((s) => s.togglePathway);
+  const toggleXray = useAtlas((s) => s.toggleXray);
+  const toggleFamily = useAtlas((s) => s.toggleFamily);
   const setClipMode = useAtlas((s) => s.setClipMode);
   const mobileTab = useAtlas((s) => s.mobileTab);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const tourIndex = useAtlas((s) => s.tourIndex);
+  const demoIndex = useAtlas((s) => s.demoIndex);
+  const nextDemo = useAtlas((s) => s.nextDemo);
+  const prevDemo = useAtlas((s) => s.prevDemo);
+  const stopDemo = useAtlas((s) => s.stopDemo);
   const phone = useIsPhone();
 
   useEffect(() => {
@@ -65,11 +72,13 @@ export function AtlasApp() {
       if (event.key === "h" || event.key === "H") hideSelected();
       if (event.key === " " || event.key === "ArrowRight") {
         event.preventDefault();
-        nextTour();
+        if (useAtlas.getState().demoIndex !== null) nextDemo();
+        else nextTour();
       }
       if (event.key === "ArrowLeft") {
         event.preventDefault();
-        prevTour();
+        if (useAtlas.getState().demoIndex !== null) prevDemo();
+        else prevTour();
       }
       if (event.key === "u" || event.key === "U") undoHide();
       if (event.key === "f" || event.key === "F") focusSelection();
@@ -83,10 +92,20 @@ export function AtlasApp() {
       if (event.key === "p" || event.key === "P") pinSelection();
       if (event.key === "l" || event.key === "L") toggleLabels();
       if (event.key === "c" || event.key === "C") toggleContext();
+      if (event.key === "y" || event.key === "Y") toggleXray();
+      if (event.key === "w" || event.key === "W") togglePathway();
+      if (event.key === "g" || event.key === "G") toggleFamily();
       if (event.key === "6") setClipMode("sagittal");
       if (event.key === "7") setClipMode("coronal");
       if (event.key === "8") setClipMode("axial");
+      if (event.key === "9") setClipMode("quarter");
+      if (event.key === "-") setClipMode("hemi");
       if (event.key === "0") setClipMode("off");
+      if (event.key === "d" || event.key === "D") {
+        const demoing = useAtlas.getState().demoIndex !== null;
+        if (demoing) stopDemo();
+        else useAtlas.getState().startDemo();
+      }
       if (event.key === "t" || event.key === "T") {
         const touring = useAtlas.getState().tourIndex !== null;
         if (touring) stopTour();
@@ -95,13 +114,19 @@ export function AtlasApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, pinSelection, prevTour, resetView, setAppearance, setClipMode, stopTour, toggleContext, toggleIsolate, toggleLabels, undoHide]);
+  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextDemo, nextTour, pinSelection, prevDemo, prevTour, resetView, setAppearance, setClipMode, stopDemo, stopTour, toggleContext, toggleFamily, toggleIsolate, toggleLabels, togglePathway, toggleXray, undoHide]);
 
   useEffect(() => {
     if (tourIndex === null) return;
     const id = window.setTimeout(() => useAtlas.getState().nextTour(), 7200);
     return () => window.clearTimeout(id);
   }, [tourIndex]);
+
+  useEffect(() => {
+    if (demoIndex === null) return;
+    const id = window.setTimeout(() => useAtlas.getState().nextDemo(), 6400);
+    return () => window.clearTimeout(id);
+  }, [demoIndex]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {

@@ -1,10 +1,19 @@
-export type ClipMode = "off" | "axial" | "sagittal" | "coronal";
+export type ClipMode = "off" | "axial" | "sagittal" | "coronal" | "quarter" | "hemi";
 
-export function clipPlaneArgs(mode: ClipMode, clipY: number): { normal: [number, number, number]; constant: number } | null {
-  if (mode === "off") return null;
-  if (mode === "axial") return { normal: [0, -1, 0], constant: clipY };
-  if (mode === "sagittal") return { normal: [-1, 0, 0], constant: 0.008 };
-  return { normal: [0, 0, -1], constant: 0.05 };
+export type ClipPlaneSpec = { normal: [number, number, number]; constant: number };
+
+const SAGITTAL: ClipPlaneSpec = { normal: [-1, 0, 0], constant: 0.008 };
+const CORONAL: ClipPlaneSpec = { normal: [0, 0, -1], constant: 0.05 };
+
+export function clipPlaneList(mode: ClipMode, clipY: number): ClipPlaneSpec[] {
+  const axial: ClipPlaneSpec = { normal: [0, -1, 0], constant: clipY };
+  if (mode === "off") return [];
+  if (mode === "axial") return [axial];
+  if (mode === "sagittal") return [SAGITTAL];
+  if (mode === "coronal") return [CORONAL];
+  if (mode === "quarter") return [SAGITTAL, axial];
+  if (mode === "hemi") return [SAGITTAL, CORONAL];
+  return [];
 }
 
 export function relatedName(a: string, b: string) {

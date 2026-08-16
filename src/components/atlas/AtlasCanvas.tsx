@@ -17,14 +17,15 @@ import { LoadBoundary } from "./LoadBoundary";
 import { LocalStudio } from "./LocalStudio";
 import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
+import { SectionPlanes } from "./SectionPlanes";
 
 function Lights() {
   return (
     <>
-      <hemisphereLight args={["#f7f1ea", "#1a1612", 0.62]} />
+      <hemisphereLight args={["#f7f1ea", "#1a1612", 0.68]} />
       <directionalLight
         position={[2.6, 4.4, 2.4]}
-        intensity={1.35}
+        intensity={1.42}
         color="#fff6ea"
         castShadow
         shadow-mapSize={[2048, 2048]}
@@ -36,15 +37,16 @@ function Lights() {
         shadow-camera-top={2.2}
         shadow-camera-bottom={-0.2}
       />
-      <directionalLight position={[-2.8, 1.6, -1.8]} intensity={0.48} color="#9eb4d4" />
+      <directionalLight position={[-2.8, 1.6, -1.8]} intensity={0.52} color="#9eb4d4" />
+      <directionalLight position={[0.1, 1.4, -2.4]} intensity={0.38} color="#ffd4b8" />
       <spotLight
         position={[0.35, 3.5, 1.35]}
         angle={0.48}
         penumbra={0.9}
-        intensity={0.7}
+        intensity={0.78}
         color="#ffe6d0"
       />
-      <pointLight position={[0, 1.1, 1.6]} intensity={0.28} color="#ffd8c0" distance={4} />
+      <pointLight position={[0, 1.1, 1.6]} intensity={0.32} color="#ffd8c0" distance={4} />
     </>
   );
 }
@@ -66,7 +68,7 @@ export function AtlasCanvas() {
         localClippingEnabled: true,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.08,
+        toneMappingExposure: 1.14,
         outputColorSpace: THREE.SRGBColorSpace,
       }}
       camera={{
@@ -96,6 +98,7 @@ export function AtlasCanvas() {
         </LoadBoundary>
         <Hotspots />
         <AnatomyCallouts />
+        <SectionPlanes />
       </Suspense>
       <ContactShadows
         position={[0, 0.001, 0]}

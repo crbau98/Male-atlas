@@ -16,6 +16,13 @@ export function clipPlaneList(mode: ClipMode, clipY: number): ClipPlaneSpec[] {
   return [];
 }
 
+export const CLIP_CYCLE: ClipMode[] = ["off", "sagittal", "quarter", "hemi", "coronal", "axial"];
+
+export function nextClipMode(mode: ClipMode): ClipMode {
+  const i = CLIP_CYCLE.indexOf(mode);
+  return CLIP_CYCLE[(i + 1) % CLIP_CYCLE.length];
+}
+
 export function relatedName(a: string, b: string) {
   const base = (n: string) =>
     n

@@ -5,6 +5,7 @@ uniform vec3 uHairColor;
 uniform vec3 uSkinTint;
 uniform vec3 uEyeColor;
 uniform vec3 uSheenColor;
+uniform vec3 uAttenuation;
 uniform float uMelanin;
 uniform float uClose;
 
@@ -70,10 +71,11 @@ export function injectPhotorealSkin(
        vec3 w = vAtlasWorld;
        float ax = abs(w.x);
        vec3 nrm = normalize(vAtlasNormal);
-       float mottling = atlasFbm(w * 6.2) - 0.5;
+       float mottling = atlasFbm(w * 5.4) - 0.5;
        vec3 skin = uSkinTint;
-       skin *= 0.97 + mottling * 0.045;
-       skin = mix(skin, vec3(skin.r * 0.93, skin.g * 0.96, skin.b * 1.03), (1.0 - uMelanin) * 0.08);
+       skin *= 0.985 + mottling * 0.028;
+       skin = mix(skin, vec3(skin.r * 0.93, skin.g * 0.96, skin.b * 1.04), (1.0 - uMelanin) * 0.07);
+       vec3 flush = mix(uSkinTint, uAttenuation, 0.55);
 
        float faceMask = atlasSoft(w.y, 1.50, 1.54)
          * (1.0 - atlasSoft(w.y, 1.66, 1.70))
@@ -97,8 +99,14 @@ export function injectPhotorealSkin(
 
        float eyeL = length(w - vec3(-0.031, 1.595, 0.164));
        float eyeR = length(w - vec3( 0.030, 1.595, 0.164));
-       float eye = 1.0 - atlasSoft(min(eyeL, eyeR), 0.012, 0.019);
-       float iris = 1.0 - atlasSoft(min(eyeL, eyeR), 0.005, 0.010);
+       float eyeMin = min(eyeL, eyeR);
+       float eye = 1.0 - atlasSoft(eyeMin, 0.012, 0.019);
+       float iris = 1.0 - atlasSoft(eyeMin, 0.005, 0.010);
+       float pupil = 1.0 - atlasSoft(eyeMin, 0.0017, 0.0034);
+       float limbus = clamp(iris * (1.0 - iris) * 4.0, 0.0, 1.0);
+       float catchL = 1.0 - atlasSoft(length(w - vec3(-0.028, 1.598, 0.172)), 0.0012, 0.0028);
+       float catchR = 1.0 - atlasSoft(length(w - vec3( 0.033, 1.598, 0.172)), 0.0012, 0.0028);
+       float scleraVein = eye * (1.0 - iris) * 0.12 * abs(sin(w.x * 90.0 + w.y * 40.0));
        float brow = atlasSoft(w.y, 1.612, 1.620) * (1.0 - atlasSoft(w.y, 1.628, 1.636))
          * atlasSoft(ax, 0.016, 0.026) * (1.0 - atlasSoft(ax, 0.048, 0.058))
          * atlasSoft(w.z, 0.10, 0.14);
@@ -139,8 +147,12 @@ export function injectPhotorealSkin(
        col = mix(col, earCol, clamp(ears, 0.0, 1.0));
        col = mix(col, lipCol, clamp(lips, 0.0, 1.0));
        col = mix(col, mix(uSkinTint, vec3(0.86, 0.62, 0.55), 0.22), clamp(nose * 0.4, 0.0, 1.0));
-       col = mix(col, vec3(0.95, 0.95, 0.96), clamp(eye * 0.92, 0.0, 1.0));
+       col = mix(col, vec3(0.93, 0.94, 0.95), clamp(eye * 0.94, 0.0, 1.0));
+       col = mix(col, vec3(0.78, 0.42, 0.40), scleraVein);
        col = mix(col, uEyeColor, clamp(iris, 0.0, 1.0));
+       col = mix(col, uEyeColor * 0.35, limbus * 0.85);
+       col = mix(col, vec3(0.06, 0.04, 0.04), clamp(pupil, 0.0, 1.0));
+       col = mix(col, vec3(1.0), clamp(max(catchL, catchR), 0.0, 1.0));
        col = mix(col, uHairColor, clamp(brow * 0.94, 0.0, 1.0));
        col = mix(col, uHairColor, stubble * 0.48 * strand);
        col = mix(col, areolaCol, clamp(areola, 0.0, 1.0));
@@ -150,15 +162,25 @@ export function injectPhotorealSkin(
        col = mix(col, scrotumCol * 0.72, raphe);
        col = mix(col, mix(hairRoot, uHairColor, strand2), hairVol * (0.88 + 0.12 * strand));
        col = mix(col, uHairColor, pubic * (0.5 + 0.4 * strand));
+       float fuzz = faceMask * (1.0 - uMelanin) * strand * 0.1;
+       col = mix(col, uHairColor, fuzz);
+       float tzone = faceMask * atlasSoft(w.z, 0.16, 0.195) * (1.0 - atlasSoft(ax, 0.018, 0.04));
+       float chestVein = (1.0 - uMelanin) * atlasSoft(w.y, 1.18, 1.24) * (1.0 - atlasSoft(w.y, 1.34, 1.4))
+         * atlasSoft(w.z, 0.14, 0.2) * (0.35 + 0.65 * abs(sin(w.x * 36.0 + w.y * 18.0)));
+       col = mix(col, mix(col, vec3(0.42, 0.28, 0.38), 0.35), chestVein * 0.22);
 
        float pore = 0.0;
-       if (uClose > 0.25) {
-         pore = (atlasVnoise(w * 42.0) - 0.5) * 0.03 * uClose * uClose;
+       if (uClose > 0.45) {
+         pore = (atlasFbm(w * 26.0) - 0.5) * 0.016 * uClose;
        }
        col *= 1.0 + pore;
-       float wrap = 0.8 + 0.2 * clamp(dot(nrm, vec3(0.22, 0.9, 0.35)), 0.0, 1.0);
+       float ndv = abs(dot(nrm, normalize(cameraPosition - w)));
+       float wrap = 0.78 + 0.22 * clamp(dot(nrm, vec3(0.22, 0.9, 0.35)), 0.0, 1.0);
+       float sss = pow(1.0 - ndv, 1.7);
+       float thin = clamp(ears * 1.35 + lips * 0.55 + nose * 0.28 + scrotum * 0.45 + areola * 0.25, 0.0, 1.0);
        col *= wrap;
-       col = mix(col, uSheenColor, 0.04 + uClose * 0.05);
+       col = mix(col, flush, thin * 0.42 + sss * (0.1 + 0.12 * (1.0 - uMelanin)));
+       col = mix(col, uSheenColor, 0.035 + uClose * 0.045 + tzone * 0.08 + lips * 0.06);
        diffuseColor.rgb = col;`,
     );
 }

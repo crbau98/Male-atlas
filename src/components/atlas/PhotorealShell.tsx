@@ -25,6 +25,16 @@ export function PhotorealShell() {
   const lookAt = useAtlas((s) => s.lookAt);
   const planes = useClipPlanes();
   const hold = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const gesture = useRef({
+    x: 0,
+    y: 0,
+    t: 0,
+    point: [0, 0, 0] as [number, number, number],
+    genital: null as string | null,
+    dragged: false,
+    peeled: false,
+  });
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
   const lastPeel = useRef<string>("");
@@ -36,6 +46,17 @@ export function PhotorealShell() {
       clearInterval(hold.current);
       hold.current = null;
     }
+    if (holdDelay.current) {
+      clearTimeout(holdDelay.current);
+      holdDelay.current = null;
+    }
+  };
+
+  const startPeel = (point: [number, number, number], genital: string | null) => {
+    if (genital) tapPart(genital, point);
+    else lookAt(point);
+    setPeel(point, genital ? 0.1 : 0.14);
+    if (useAtlas.getState().dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
   };
 
   const appearance = appearanceById(appearanceId ?? "julian");
@@ -53,6 +74,7 @@ export function PhotorealShell() {
     uSheenColor: { value: new THREE.Color(appearance.sheen) },
     uClose: { value: 0 },
     uInvertPeel: { value: 0 },
+    uAttenuation: { value: new THREE.Color(appearance.attenuation) },
   });
 
   const material = useMemo(() => {
@@ -79,9 +101,10 @@ export function PhotorealShell() {
         uEyeColor: uniforms.current.uEyeColor,
         uSheenColor: uniforms.current.uSheenColor,
         uClose: uniforms.current.uClose,
+        uAttenuation: uniforms.current.uAttenuation,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v3-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v4-${appearance.id}`;
     return mat;
   }, [appearance]);
 
@@ -97,6 +120,7 @@ export function PhotorealShell() {
     u.uMelanin.value = appearance.melanin;
     u.uEyeColor.value.set(appearance.eyes);
     u.uSheenColor.value.set(appearance.sheen);
+    u.uAttenuation.value.set(appearance.attenuation);
     const key = peelCenter ? peelCenter.join(",") : "";
     if (key !== lastPeel.current) {
       lastPeel.current = key;
@@ -146,22 +170,44 @@ export function PhotorealShell() {
       object={gltf.scene}
       onPointerDown={(event: {
         point: THREE.Vector3;
-        stopPropagation: () => void;
+        nativeEvent: { clientX: number; clientY: number };
       }) => {
-        event.stopPropagation();
-        const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
         const point: [number, number, number] = [event.point.x, event.point.y, event.point.z];
-        if (genital) tapPart(genital, point);
-        else lookAt(point);
-        setPeel(point, genital ? 0.1 : 0.14);
-        if (dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
+        const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
+        gesture.current = {
+          x: event.nativeEvent.clientX,
+          y: event.nativeEvent.clientY,
+          t: performance.now(),
+          point,
+          genital,
+          dragged: false,
+          peeled: false,
+        };
         stopHold();
-        hold.current = setInterval(() => {
-          const radius = useAtlas.getState().peelRadius;
-          setPeelRadius(Math.min(0.32, radius + 0.012));
-        }, 70);
+        holdDelay.current = setTimeout(() => {
+          if (gesture.current.dragged) return;
+          gesture.current.peeled = true;
+          startPeel(gesture.current.point, gesture.current.genital);
+          hold.current = setInterval(() => {
+            const radius = useAtlas.getState().peelRadius;
+            setPeelRadius(Math.min(0.32, radius + 0.012));
+          }, 70);
+        }, 420);
       }}
-      onPointerUp={stopHold}
+      onPointerMove={(event: { nativeEvent: { clientX: number; clientY: number } }) => {
+        const dx = event.nativeEvent.clientX - gesture.current.x;
+        const dy = event.nativeEvent.clientY - gesture.current.y;
+        if (dx * dx + dy * dy > 64) {
+          gesture.current.dragged = true;
+          if (!gesture.current.peeled) stopHold();
+        }
+      }}
+      onPointerUp={() => {
+        const g = gesture.current;
+        const dt = performance.now() - g.t;
+        stopHold();
+        if (!g.dragged && !g.peeled && dt < 420) startPeel(g.point, g.genital);
+      }}
       onPointerLeave={stopHold}
       onPointerCancel={stopHold}
     />

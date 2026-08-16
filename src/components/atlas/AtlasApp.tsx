@@ -15,6 +15,9 @@ import { FigurePlate } from "./FigurePlate";
 import { RegionRail } from "./RegionRail";
 import { SelectionHud } from "./SelectionHud";
 import { StructureTree } from "./StructureTree";
+import { AtlasLoader } from "./AtlasLoader";
+import { CoachHint } from "./CoachHint";
+import { MobileDock } from "./MobileDock";
 
 const LOOKS: AppearanceId[] = ["julian", "malik", "kenji", "diego"];
 const LOOK_KEY = "male-atlas-look";
@@ -33,7 +36,6 @@ export function AtlasApp() {
   const nextTour = useAtlas((s) => s.nextTour);
   const prevTour = useAtlas((s) => s.prevTour);
   const stopTour = useAtlas((s) => s.stopTour);
-  const undoHide = useAtlas((s) => s.undoHide);
   const focusSelection = useAtlas((s) => s.focusSelection);
   const goRegion = useAtlas((s) => s.goRegion);
   const goAdjacentRegion = useAtlas((s) => s.goAdjacentRegion);
@@ -80,7 +82,7 @@ export function AtlasApp() {
         if (useAtlas.getState().demoIndex !== null) prevDemo();
         else prevTour();
       }
-      if (event.key === "u" || event.key === "U") undoHide();
+      if (event.key === "u" || event.key === "U") useAtlas.getState().undoView();
       if (event.key === "f" || event.key === "F") focusSelection();
       if (event.key === "[" ) goAdjacentRegion(-1);
       if (event.key === "]" ) goAdjacentRegion(1);
@@ -114,7 +116,7 @@ export function AtlasApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextDemo, nextTour, pinSelection, prevDemo, prevTour, resetView, setAppearance, setClipMode, stopDemo, stopTour, toggleContext, toggleFamily, toggleIsolate, toggleLabels, togglePathway, toggleXray, undoHide]);
+  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextDemo, nextTour, pinSelection, prevDemo, prevTour, resetView, setAppearance, setClipMode, stopDemo, stopTour, toggleContext, toggleFamily, toggleIsolate, toggleLabels, togglePathway, toggleXray]);
 
   useEffect(() => {
     if (tourIndex === null) return;
@@ -141,6 +143,7 @@ export function AtlasApp() {
       <div className="flex h-dvh flex-col overflow-hidden bg-[#07080c] text-[#efece6]">
         <div className="relative min-h-0 flex-1">
           <AtlasCanvas />
+          <AtlasLoader />
           <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
             <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/10 bg-[#101218]/80 px-2 py-1 backdrop-blur-md">
               <AppearanceStrip />
@@ -153,10 +156,9 @@ export function AtlasApp() {
               Looks
             </button>
           </div>
-          <div className="pointer-events-none absolute inset-x-3 top-16 flex flex-col items-start gap-2">
+          <div className="pointer-events-none absolute inset-x-3 top-16 flex max-h-[34vh] flex-col items-start gap-2 overflow-y-auto">
+            <CoachHint />
             <SelectionHud />
-            <FigurePlate />
-            <HoverChip />
           </div>
           <RegionRail />
           {catalog.meta.partCount === 0 ? (
@@ -164,12 +166,14 @@ export function AtlasApp() {
               Run python3 scripts/ingest_bodyparts3d.py
             </p>
           ) : null}
-          <div className="pointer-events-none absolute inset-x-3 bottom-2">
-            <InstallHint />
-          </div>
         </div>
         <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#0b0d12] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-          {mobileTab === "view" ? <LayerBar compact /> : null}
+          {mobileTab === "view" ? (
+            <>
+              <MobileDock />
+              <InstallHint />
+            </>
+          ) : null}
           {mobileTab === "parts" ? (
             <div className="h-[42vh]">
               <StructureTree />
@@ -202,6 +206,7 @@ export function AtlasApp() {
   return (
     <div className="relative h-dvh overflow-hidden bg-[#07080c] text-[#efece6]">
       <AtlasCanvas />
+      <AtlasLoader />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 md:p-6">
         <div className="flex items-start justify-between gap-4">
           <div className="h-[min(78vh,760px)] w-80">

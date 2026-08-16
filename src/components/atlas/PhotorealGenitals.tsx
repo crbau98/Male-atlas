@@ -144,13 +144,13 @@ export function PhotorealGenitals() {
           <mesh key={id} name={id} geometry={geometry} visible={visible} castShadow={false} receiveShadow>
             <meshPhysicalMaterial
               color={color}
-              roughness={nude ? (id === "FJ3134" ? 0.22 : 0.36) : 0.48}
+              roughness={nude ? (id === "FJ3134" ? 0.16 : 0.32) : 0.48}
               metalness={0}
-              sheen={nude ? 0.55 : 0.12}
+              sheen={nude ? 0.7 : 0.12}
               sheenColor={nude ? appearance.sheen : "#e8c4b8"}
-              clearcoat={nude && id === "FJ3134" ? 0.18 : 0.06}
-              clearcoatRoughness={0.45}
-              envMapIntensity={0.85}
+              clearcoat={nude && id === "FJ3134" ? 0.32 : 0.08}
+              clearcoatRoughness={nude && id === "FJ3134" ? 0.28 : 0.45}
+              envMapIntensity={nude ? 1.05 : 0.85}
               clippingPlanes={planes}
               clipShadows
               side={THREE.DoubleSide}

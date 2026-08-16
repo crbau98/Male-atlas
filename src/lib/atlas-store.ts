@@ -5,9 +5,28 @@ import type { AppearanceId, CatalogPart } from "./types";
 import { SYSTEM_ORDER } from "./systems";
 import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
 import type { ClipMode } from "./clip";
+import { nextClipMode } from "./clip";
 import { DEMO } from "./demo";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
+
+type ViewSnap = {
+  dissection: number;
+  explode: number;
+  clipY: number;
+  clipEnabled: boolean;
+  clipMode: ClipMode;
+  peelCenter: Vec3 | null;
+  peelRadius: number;
+  selectedId: string | null;
+  selectedPoint: Vec3 | null;
+  isolated: boolean;
+  familyOn: boolean;
+  xrayOn: boolean;
+  hidden: string[];
+  region: RegionId;
+  photoreal: boolean;
+};
 
 type AtlasState = {
   appearanceId: AppearanceId | null;
@@ -40,6 +59,7 @@ type AtlasState = {
   demoIndex: number | null;
   showLabels: boolean;
   pinned: Array<{ id: string; point: Vec3 }>;
+  history: ViewSnap[];
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -82,9 +102,49 @@ type AtlasState = {
   resetView: () => void;
   toggleLabels: () => void;
   pinSelection: () => void;
+  cycleClip: () => void;
+  closePeel: () => void;
+  undoView: () => void;
+  pushHistory: () => void;
 };
 
 const defaultSystems = Object.fromEntries(SYSTEM_ORDER.map((s) => [s, true]));
+
+function takeSnap(s: {
+  dissection: number;
+  explode: number;
+  clipY: number;
+  clipEnabled: boolean;
+  clipMode: ClipMode;
+  peelCenter: Vec3 | null;
+  peelRadius: number;
+  selectedId: string | null;
+  selectedPoint: Vec3 | null;
+  isolated: boolean;
+  familyOn: boolean;
+  xrayOn: boolean;
+  hidden: Set<string>;
+  region: RegionId;
+  photoreal: boolean;
+}): ViewSnap {
+  return {
+    dissection: s.dissection,
+    explode: s.explode,
+    clipY: s.clipY,
+    clipEnabled: s.clipEnabled,
+    clipMode: s.clipMode,
+    peelCenter: s.peelCenter,
+    peelRadius: s.peelRadius,
+    selectedId: s.selectedId,
+    selectedPoint: s.selectedPoint,
+    isolated: s.isolated,
+    familyOn: s.familyOn,
+    xrayOn: s.xrayOn,
+    hidden: [...s.hidden],
+    region: s.region,
+    photoreal: s.photoreal,
+  };
+}
 
 function applyRegionPatch(id: RegionId) {
   const region = REGIONS[id];
@@ -130,18 +190,21 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   demoIndex: null,
   showLabels: true,
   pinned: [],
+  history: [] as ViewSnap[],
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
   setClipY: (clipY) => set({ clipY, clipEnabled: true, clipMode: get().clipMode === "off" ? "axial" : get().clipMode }),
   setClipEnabled: (clipEnabled) =>
     set({ clipEnabled, clipMode: clipEnabled ? (get().clipMode === "off" ? "axial" : get().clipMode) : "off" }),
-  setClipMode: (clipMode) =>
+  setClipMode: (clipMode) => {
+    get().pushHistory();
     set({
       clipMode,
       clipEnabled: clipMode !== "off",
       clipY: clipMode === "quarter" && get().clipY > 1.65 ? 1.22 : get().clipY,
-    }),
+    });
+  },
   setContextOn: (contextOn) => set({ contextOn }),
   toggleContext: () => set({ contextOn: !get().contextOn }),
   togglePathway: () => set({ pathwayOn: !get().pathwayOn }),
@@ -150,8 +213,12 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     if (get().familyOn) set({ familyOn: false, isolated: false });
     else set({ familyOn: true, isolated: true });
   },
-  setPeel: (peelCenter, peelRadius) =>
-    set({ peelCenter, peelRadius: peelRadius ?? get().peelRadius }),
+  setPeel: (peelCenter, peelRadius) => {
+    const prev = get().peelCenter;
+    const changed = (prev?.[0] !== peelCenter?.[0]) || (prev?.[1] !== peelCenter?.[1]) || (prev?.[2] !== peelCenter?.[2]);
+    if (changed) get().pushHistory();
+    set({ peelCenter, peelRadius: peelRadius ?? get().peelRadius });
+  },
   setPeelRadius: (peelRadius) => set({ peelRadius }),
   select: (selectedId, point) =>
     set({
@@ -165,6 +232,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   hideSelected: () => {
     const id = get().selectedId;
     if (!id) return;
+    get().pushHistory();
     const hidden = new Set(get().hidden);
     hidden.add(id);
     set({
@@ -214,7 +282,10 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     }
     set({ cameraGoal: { target, distance: 0.46 } });
   },
-  goRegion: (id) => set(applyRegionPatch(id)),
+  goRegion: (id) => {
+    get().pushHistory();
+    set(applyRegionPatch(id));
+  },
   clearCameraGoal: () => set({ cameraGoal: null }),
   applyTourStep: (index) => {
     const step = TOUR[index];
@@ -235,7 +306,10 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       dissection: step.dissection ?? REGIONS[step.region].dissection,
     });
   },
-  startTour: () => get().applyTourStep(0),
+  startTour: () => {
+    get().pushHistory();
+    get().applyTourStep(0);
+  },
   nextTour: () => {
     const current = get().tourIndex ?? -1;
     get().applyTourStep(current + 1);
@@ -282,7 +356,10 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       showLabels: true,
     });
   },
-  startDemo: () => get().applyDemoStep(0),
+  startDemo: () => {
+    get().pushHistory();
+    get().applyDemoStep(0);
+  },
   nextDemo: () => {
     const current = get().demoIndex ?? -1;
     get().applyDemoStep(current + 1);
@@ -338,7 +415,51 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       mobileTab: "view",
       pinned: [],
       showLabels: true,
+      history: [],
     }),
+  pushHistory: () => {
+    const cur = takeSnap(get());
+    const hist = get().history;
+    const last = hist[hist.length - 1];
+    if (last && JSON.stringify(last) === JSON.stringify(cur)) return;
+    set({ history: [...hist, cur].slice(-20) });
+  },
+  cycleClip: () => get().setClipMode(nextClipMode(get().clipMode)),
+  closePeel: () => {
+    get().pushHistory();
+    set({
+      peelCenter: null,
+      dissection: get().dissection < 0.28 ? 0 : get().dissection,
+    });
+  },
+  undoView: () => {
+    const hist = [...get().history];
+    const prev = hist.pop();
+    if (!prev) {
+      get().undoHide();
+      return;
+    }
+    set({
+      dissection: prev.dissection,
+      explode: prev.explode,
+      clipY: prev.clipY,
+      clipEnabled: prev.clipEnabled,
+      clipMode: prev.clipMode,
+      peelCenter: prev.peelCenter,
+      peelRadius: prev.peelRadius,
+      selectedId: prev.selectedId,
+      selectedPoint: prev.selectedPoint,
+      isolated: prev.isolated,
+      familyOn: prev.familyOn,
+      xrayOn: prev.xrayOn,
+      hidden: new Set(prev.hidden),
+      region: prev.region,
+      photoreal: prev.photoreal,
+      history: hist,
+      brainFocus: prev.region === "head",
+      pelvisFocus: prev.region === "pelvis",
+    });
+  },
 }));
 
 export function partMatches(part: CatalogPart, query: string): boolean {

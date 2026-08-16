@@ -19,6 +19,7 @@ body {
   color: var(--foreground);
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 body {

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { catalog } from "@/lib/catalog";
 import { partMatches, useAtlas } from "@/lib/atlas-store";
+import { revealPart } from "@/lib/reveal-part";
 import { SYSTEM_META, SYSTEM_ORDER, type SystemId } from "@/lib/systems";
 import type { CatalogPart } from "@/lib/types";
 
@@ -11,7 +12,6 @@ const parts = catalog.parts;
 export function StructureTree() {
   const search = useAtlas((s) => s.search);
   const setSearch = useAtlas((s) => s.setSearch);
-  const select = useAtlas((s) => s.select);
   const selectedId = useAtlas((s) => s.selectedId);
   const systemOn = useAtlas((s) => s.systemOn);
   const toggleSystem = useAtlas((s) => s.toggleSystem);
@@ -72,7 +72,7 @@ export function StructureTree() {
                   <li key={part.id}>
                     <button
                       type="button"
-                      onClick={() => select(part.id)}
+                      onClick={() => revealPart(part.id)}
                       className={`block w-full truncate px-2 py-1 text-left text-xs ${
                         selectedId === part.id
                           ? "text-[#c4a46c]"

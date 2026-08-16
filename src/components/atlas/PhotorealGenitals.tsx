@@ -15,6 +15,8 @@ import {
 } from "@/lib/genital-parts";
 import { injectPeelShader } from "@/lib/peel-shader";
 import { injectIllustrationShader } from "@/lib/plate-shader";
+import { livingRuntime } from "@/lib/living-runtime";
+import { pulseHaptic } from "@/lib/living-touch";
 import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
 
@@ -82,6 +84,9 @@ export function PhotorealGenitals() {
   const appearance = appearanceById(appearanceId ?? "julian");
   const uniforms = usePeelUniforms();
   const planes = useClipPlanes();
+  const group = useRef<THREE.Group>(null);
+  const flush = useRef(0);
+  const stroke = useRef({ x: 0, y: 0, down: false });
 
   const geometries = useMemo(() => {
     const out = new Map<string, THREE.BufferGeometry>();
@@ -121,13 +126,85 @@ export function PhotorealGenitals() {
     [],
   );
 
+  useFrame((_, delta) => {
+    const aroused = useAtlas.getState().physiologyOn ? livingRuntime.arousal : 0;
+    flush.current = THREE.MathUtils.damp(flush.current, aroused, 2.8, delta);
+    const a = flush.current;
+    const root = group.current;
+    if (!root) return;
+    const selected = useAtlas.getState().selectedId;
+    const hovered = useAtlas.getState().hoveredId;
+    for (const child of root.children) {
+      const mesh = child as THREE.Mesh;
+      if (!mesh.isMesh) continue;
+      const shaft = mesh.name === "FJ3132";
+      const glans = mesh.name === "FJ3134";
+      const scrotum = mesh.name === "FJ3138" || mesh.name === "FJ3142";
+      if (shaft || glans) {
+        mesh.scale.set(1 + a * 0.16, 1 + a * (shaft ? 0.38 : 0.2), 1 + a * (shaft ? 0.48 : 0.28));
+      } else if (scrotum) {
+        mesh.scale.setScalar(1 + a * 0.1);
+      }
+      const mat = mesh.material as THREE.MeshPhysicalMaterial;
+      if (mat?.isMaterial && (shaft || glans || mesh.name === "FJ3133")) {
+        mat.sheen = (shaft || glans ? 0.7 : 0.12) + a * 0.35;
+        mat.sheenRoughness = THREE.MathUtils.clamp((shaft || glans ? 0.28 : 0.5) - a * 0.12, 0.12, 0.55);
+        if (selected !== mesh.name && hovered !== mesh.name) {
+          mat.emissive.setRGB(0.38 * a, 0.07 * a, 0.1 * a);
+          mat.emissiveIntensity = a * 0.42;
+        }
+      }
+    }
+  });
+
   return (
     <group
+      ref={group}
       onPointerOver={(event) => {
         event.stopPropagation();
         hover(event.object.name);
       }}
       onPointerOut={() => hover(null)}
+      onPointerDown={(event) => {
+        const native = event.nativeEvent as PointerEvent;
+        (native.target as Element | null)?.setPointerCapture?.(native.pointerId);
+        stroke.current = { x: native.clientX, y: native.clientY, down: true };
+        const intensity = useAtlas.getState().physiologyIntensity;
+        if (!useAtlas.getState().physiologyOn) return;
+        livingRuntime.apply(
+          event.point.x,
+          event.point.y,
+          event.point.z,
+          event.object.name,
+          0.045,
+          intensity,
+        );
+        pulseHaptic("pelvis");
+      }}
+      onPointerMove={(event) => {
+        if (!stroke.current.down) return;
+        const native = event.nativeEvent as PointerEvent;
+        const step = Math.hypot(native.clientX - stroke.current.x, native.clientY - stroke.current.y);
+        stroke.current.x = native.clientX;
+        stroke.current.y = native.clientY;
+        if (!useAtlas.getState().physiologyOn) return;
+        livingRuntime.apply(
+          event.point.x,
+          event.point.y,
+          event.point.z,
+          event.object.name,
+          Math.min(0.1, 0.02 + step / 160),
+          useAtlas.getState().physiologyIntensity,
+        );
+      }}
+      onPointerUp={() => {
+        stroke.current.down = false;
+        livingRuntime.release();
+      }}
+      onPointerCancel={() => {
+        stroke.current.down = false;
+        livingRuntime.release();
+      }}
       onClick={(event) => {
         event.stopPropagation();
         tapPart(event.object.name, [event.point.x, event.point.y, event.point.z]);

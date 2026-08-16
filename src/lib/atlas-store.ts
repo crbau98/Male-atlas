@@ -7,6 +7,7 @@ import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
 import type { ClipMode } from "./clip";
 import { nextClipMode } from "./clip";
 import { DEMO } from "./demo";
+import type { TouchZone } from "./living-touch";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
 export type AtlasTheme = "dark" | "light";
@@ -69,6 +70,9 @@ type AtlasState = {
   physiologyOn: boolean;
   physiologyIntensity: number;
   breathingOn: boolean;
+  affect: number;
+  arousal: number;
+  touchZone: TouchZone | null;
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -121,6 +125,7 @@ type AtlasState = {
   togglePhysiology: () => void;
   setPhysiologyIntensity: (v: number) => void;
   toggleBreathing: () => void;
+  setLiving: (patch: { affect?: number; arousal?: number; touchZone?: TouchZone | null }) => void;
 };
 
 const defaultSystems = Object.fromEntries(SYSTEM_ORDER.map((s) => [s, true]));
@@ -212,6 +217,9 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   physiologyOn: true,
   physiologyIntensity: 0.68,
   breathingOn: true,
+  affect: 0,
+  arousal: 0,
+  touchZone: null,
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
@@ -437,6 +445,9 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       pinned: [],
       showLabels: true,
       history: [],
+      affect: 0,
+      arousal: 0,
+      touchZone: null,
     }),
   setTheme: (theme) => set({ theme }),
   setLightingPreset: (lightingPreset) => set({ lightingPreset }),
@@ -445,6 +456,12 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setPhysiologyIntensity: (physiologyIntensity) =>
     set({ physiologyIntensity: Math.min(1, Math.max(0, physiologyIntensity)) }),
   toggleBreathing: () => set({ breathingOn: !get().breathingOn }),
+  setLiving: (patch) =>
+    set({
+      affect: patch.affect ?? get().affect,
+      arousal: patch.arousal ?? get().arousal,
+      touchZone: patch.touchZone === undefined ? get().touchZone : patch.touchZone,
+    }),
   pushHistory: () => {
     const cur = takeSnap(get());
     const hist = get().history;

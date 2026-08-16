@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useAtlas } from "@/lib/atlas-store";
 import { haptic } from "@/lib/haptics";
 
-const KEY = "male-atlas-hint-v2";
+const KEY = "male-atlas-hint-v3";
 
 export function CoachHint() {
   const peelCenter = useAtlas((s) => s.peelCenter);
@@ -29,8 +29,8 @@ export function CoachHint() {
     <div className="pointer-events-auto max-w-[16rem] rounded-2xl border border-white/10 bg-[#101218]/90 px-3 py-2 text-[12px] leading-5 text-[#efece6] shadow-lg backdrop-blur-md">
       <p className="text-[10px] tracking-[0.2em] text-[#c4a46c] uppercase">How to look</p>
       <p className="mt-1">
-        Drag to turn. Touch and hold for a living skin response. Tap to peel. Pinch to zoom.
-        Three fingers move one layer deeper.
+        Stroke the skin while you turn him. Face and chest warm; pelvis raises arousal.
+        Tap to peel. Pinch to zoom. Three fingers move one layer deeper.
       </p>
       <button
         type="button"

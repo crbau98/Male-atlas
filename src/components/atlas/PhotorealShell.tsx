@@ -7,6 +7,8 @@ import * as THREE from "three";
 import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
 import { pickGenitalFromPoint } from "@/lib/genital-parts";
+import { livingRuntime } from "@/lib/living-runtime";
+import { pulseHaptic } from "@/lib/living-touch";
 import { injectPeelShader } from "@/lib/peel-shader";
 import { injectPhotorealSkin } from "@/lib/skin-shader";
 import { closeupAmount } from "@/lib/skin-maps";
@@ -16,6 +18,11 @@ import { haptic } from "@/lib/haptics";
 
 const BODY_URL = "/models/photoreal-male.glb";
 const ALBEDO_URL = "/skins/photoreal-male-albedo.png";
+
+type PointerHit = {
+  point: THREE.Vector3;
+  nativeEvent: { clientX: number; clientY: number; pointerId: number; target: EventTarget | null };
+};
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -29,6 +36,7 @@ export function PhotorealShell() {
   const setPeel = useAtlas((s) => s.setPeel);
   const setDissection = useAtlas((s) => s.setDissection);
   const setPeelRadius = useAtlas((s) => s.setPeelRadius);
+  const setLiving = useAtlas((s) => s.setLiving);
   const lookAt = useAtlas((s) => s.lookAt);
   const planes = useClipPlanes();
   const hold = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -36,11 +44,14 @@ export function PhotorealShell() {
   const gesture = useRef({
     x: 0,
     y: 0,
+    lastX: 0,
+    lastY: 0,
     t: 0,
     point: [0, 0, 0] as [number, number, number],
     genital: null as string | null,
     dragged: false,
     peeled: false,
+    down: false,
   });
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
@@ -48,6 +59,11 @@ export function PhotorealShell() {
   const closeAmt = useRef(0);
   const skinMat = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const touchTarget = useRef(0);
+  const lastLivingSync = useRef(0);
+  const lastHapticZone = useRef<string | null>(null);
+  const eyes = useRef<THREE.Mesh[]>([]);
+  const pupil = useRef(0);
+  const eyeBase = useRef(new THREE.Color());
 
   const stopHold = () => {
     if (hold.current) {
@@ -99,6 +115,8 @@ export function PhotorealShell() {
     uPhysiology: { value: physiologyIntensity },
     uBreathPhase: { value: 0 },
     uMotionAmount: { value: 0 },
+    uAffect: { value: 0 },
+    uArousal: { value: 0 },
   });
 
   const eyeMaterial = useMemo(() => {
@@ -144,9 +162,11 @@ export function PhotorealShell() {
         uPhysiology: uniforms.current.uPhysiology,
         uBreathPhase: uniforms.current.uBreathPhase,
         uMotionAmount: uniforms.current.uMotionAmount,
+        uAffect: uniforms.current.uAffect,
+        uArousal: uniforms.current.uArousal,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v1-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v2-${appearance.id}`;
     return mat;
   }, [albedo, appearance]);
 
@@ -154,8 +174,38 @@ export function PhotorealShell() {
     skinMat.current = material;
   }, [material]);
 
+  const strokeAt = (point: THREE.Vector3, genital: string | null, pixelStep: number) => {
+    if (!useAtlas.getState().physiologyOn) return;
+    uniforms.current.uTouchPoint.value.copy(point);
+    touchTarget.current = 1;
+    const amount = Math.min(0.1, 0.02 + pixelStep / 160);
+    const zone = livingRuntime.apply(
+      point.x,
+      point.y,
+      point.z,
+      genital,
+      amount,
+      useAtlas.getState().physiologyIntensity,
+    );
+    if (zone !== lastHapticZone.current) {
+      lastHapticZone.current = zone;
+      pulseHaptic(zone);
+    }
+  };
+
+  const endStroke = () => {
+    gesture.current.down = false;
+    livingRuntime.release();
+    touchTarget.current = 0;
+    lastHapticZone.current = null;
+    stopHold();
+  };
+
   useFrame((state, delta) => {
     const u = uniforms.current;
+    const phys = physiologyOn ? physiologyIntensity : 0;
+    livingRuntime.decay(delta);
+    const { affect, arousal } = livingRuntime;
     u.uDissection.value = THREE.MathUtils.damp(u.uDissection.value, dissection, 3.4, delta);
     u.uHairColor.value.set(appearance.hair);
     u.uSkinTint.value.set(appearance.skinTint);
@@ -163,17 +213,20 @@ export function PhotorealShell() {
     u.uEyeColor.value.set(appearance.eyes);
     u.uSheenColor.value.set(appearance.sheen);
     u.uAttenuation.value.set(appearance.attenuation);
-    u.uPhysiology.value = physiologyOn ? physiologyIntensity : 0;
+    u.uPhysiology.value = phys;
+    u.uAffect.value = affect * (phys > 0 ? 1 : 0);
+    u.uArousal.value = arousal * (phys > 0 ? 1 : 0);
     u.uTouchStrength.value = THREE.MathUtils.damp(
       u.uTouchStrength.value,
       touchTarget.current,
       touchTarget.current > 0 ? 7 : 1.35,
       delta,
     );
-    u.uBreathPhase.value = state.clock.elapsedTime * 1.32;
+    const breathRate = 1.28 + affect * 0.55 + arousal * 1.25;
+    u.uBreathPhase.value = state.clock.elapsedTime * breathRate;
     u.uMotionAmount.value = THREE.MathUtils.damp(
       u.uMotionAmount.value,
-      breathingOn && physiologyOn ? 0.8 + physiologyIntensity * 0.45 : 0,
+      breathingOn && physiologyOn ? 0.8 + physiologyIntensity * 0.45 + arousal * 0.7 : 0,
       2.2,
       delta,
     );
@@ -198,12 +251,35 @@ export function PhotorealShell() {
     u.uClose.value = closeAmt.current;
     const mat = skinMat.current;
     if (mat) {
-      mat.envMapIntensity = 0.78 + closeAmt.current * 0.3;
-      mat.sheen = 0.55 + closeAmt.current * 0.22;
+      mat.envMapIntensity = 0.78 + closeAmt.current * 0.3 + arousal * 0.12;
+      mat.sheen = 0.55 + closeAmt.current * 0.22 + affect * 0.12 + arousal * 0.18;
+      mat.sheenRoughness = THREE.MathUtils.clamp(0.42 - arousal * 0.16, 0.18, 0.5);
+    }
+
+    const pupilTarget = THREE.MathUtils.clamp(affect * 0.18 + arousal * 0.55, 0, 0.72);
+    pupil.current = THREE.MathUtils.damp(pupil.current, pupilTarget, 5.2, delta);
+    const eyeScale = 1 + pupil.current * 0.11;
+    for (const eye of eyes.current) eye.scale.setScalar(eyeScale);
+    eyeBase.current.set(appearance.eyes);
+    const darken = 1 - pupil.current * 0.42;
+    eyeMaterial.color.copy(eyeBase.current).multiplyScalar(darken);
+
+    const now = performance.now();
+    if (now - lastLivingSync.current > 90) {
+      lastLivingSync.current = now;
+      const s = useAtlas.getState();
+      if (
+        Math.abs(s.affect - affect) > 0.01 ||
+        Math.abs(s.arousal - arousal) > 0.01 ||
+        s.touchZone !== livingRuntime.zone
+      ) {
+        setLiving({ affect, arousal, touchZone: livingRuntime.zone });
+      }
     }
   });
 
   useLayoutEffect(() => {
+    const found: THREE.Mesh[] = [];
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
@@ -214,6 +290,7 @@ export function PhotorealShell() {
         mesh.receiveShadow = true;
         mesh.raycast = () => undefined;
         eyeMaterial.clippingPlanes = planes;
+        found.push(mesh);
         return;
       }
       const isSkin = mesh.name === "PhotorealMale";
@@ -225,6 +302,7 @@ export function PhotorealShell() {
       material.clippingPlanes = planes;
       material.clipShadows = true;
     });
+    eyes.current = found;
   }, [eyeMaterial, gltf.scene, material, planes]);
 
   if (!photoreal) return null;
@@ -232,23 +310,23 @@ export function PhotorealShell() {
   return (
     <primitive
       object={gltf.scene}
-      onPointerDown={(event: {
-        point: THREE.Vector3;
-        nativeEvent: { clientX: number; clientY: number };
-      }) => {
+      onPointerDown={(event: PointerHit) => {
+        (event.nativeEvent.target as Element | null)?.setPointerCapture?.(event.nativeEvent.pointerId);
         const point: [number, number, number] = [event.point.x, event.point.y, event.point.z];
         const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
-        uniforms.current.uTouchPoint.value.copy(event.point);
-        touchTarget.current = 1;
         gesture.current = {
           x: event.nativeEvent.clientX,
           y: event.nativeEvent.clientY,
+          lastX: event.nativeEvent.clientX,
+          lastY: event.nativeEvent.clientY,
           t: performance.now(),
           point,
           genital,
           dragged: false,
           peeled: false,
+          down: true,
         };
+        strokeAt(event.point, genital, 8);
         stopHold();
         holdDelay.current = setTimeout(() => {
           if (gesture.current.dragged) return;
@@ -260,35 +338,38 @@ export function PhotorealShell() {
           }, 70);
         }, 620);
       }}
-      onPointerMove={(event: {
-        point: THREE.Vector3;
-        nativeEvent: { clientX: number; clientY: number };
-      }) => {
+      onPointerMove={(event: PointerHit) => {
+        if (!gesture.current.down) return;
         const dx = event.nativeEvent.clientX - gesture.current.x;
         const dy = event.nativeEvent.clientY - gesture.current.y;
+        const step = Math.hypot(
+          event.nativeEvent.clientX - gesture.current.lastX,
+          event.nativeEvent.clientY - gesture.current.lastY,
+        );
+        gesture.current.lastX = event.nativeEvent.clientX;
+        gesture.current.lastY = event.nativeEvent.clientY;
+        gesture.current.point = [event.point.x, event.point.y, event.point.z];
+        const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
+        gesture.current.genital = genital;
         if (dx * dx + dy * dy > 64) {
           gesture.current.dragged = true;
-          touchTarget.current = 0;
           if (!gesture.current.peeled) stopHold();
-        } else {
-          uniforms.current.uTouchPoint.value.copy(event.point);
         }
+        strokeAt(event.point, genital, step);
       }}
       onPointerUp={() => {
+        if (!gesture.current.down) return;
         const g = gesture.current;
         const dt = performance.now() - g.t;
-        touchTarget.current = 0;
-        stopHold();
-        if (!g.dragged && !g.peeled && dt < 620) startPeel(g.point, g.genital);
+        const shouldPeel = !g.dragged && !g.peeled && dt < 620;
+        endStroke();
+        if (shouldPeel) startPeel(g.point, g.genital);
       }}
       onPointerLeave={() => {
+        if (gesture.current.down) return;
         touchTarget.current = 0;
-        stopHold();
       }}
-      onPointerCancel={() => {
-        touchTarget.current = 0;
-        stopHold();
-      }}
+      onPointerCancel={endStroke}
     />
   );
 }

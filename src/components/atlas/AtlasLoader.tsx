@@ -12,15 +12,21 @@ export function AtlasLoader() {
   const done = dismissed || initialLoadComplete;
 
   useEffect(() => {
-    const id = window.setTimeout(() => setSlow(true), 18000);
-    return () => window.clearTimeout(id);
+    const slowId = window.setTimeout(() => setSlow(true), 8000);
+    const openId = window.setTimeout(() => setInitialLoadComplete(true), 14000);
+    return () => {
+      window.clearTimeout(slowId);
+      window.clearTimeout(openId);
+    };
   }, []);
 
   useEffect(() => {
-    if (active || pct < 100 || initialLoadComplete) return;
-    const id = window.setTimeout(() => setInitialLoadComplete(true), 0);
-    return () => window.clearTimeout(id);
-  }, [active, initialLoadComplete, pct]);
+    if (initialLoadComplete) return;
+    if (pct >= 98 || (!active && loaded >= 1)) {
+      const id = window.setTimeout(() => setInitialLoadComplete(true), 160);
+      return () => window.clearTimeout(id);
+    }
+  }, [active, initialLoadComplete, loaded, pct]);
 
   if (done) return null;
 
@@ -34,7 +40,7 @@ export function AtlasLoader() {
         </div>
         <p className="mt-2 text-[11px] text-[#9a958c]">
           {slow
-            ? "This phone is taking longer than usual to prepare the 3D scene."
+            ? "Still preparing 3D. You can continue — the body will appear as it finishes."
             : total > 0
               ? `${loaded}/${total} · ${pct.toFixed(0)}%`
               : "Opening 3D…"}

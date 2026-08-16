@@ -16,6 +16,7 @@ import { RegionRail } from "./RegionRail";
 import { SelectionHud } from "./SelectionHud";
 import { StructureTree } from "./StructureTree";
 import { AtlasLoader } from "./AtlasLoader";
+import { LivingHud } from "./LivingHud";
 import { CoachHint } from "./CoachHint";
 import { MobileDock } from "./MobileDock";
 import { applyViewFromUrl } from "@/lib/view-link";
@@ -218,6 +219,7 @@ export function AtlasApp() {
           </div>
           <div className="pointer-events-none absolute inset-x-3 top-16 flex max-h-[34vh] flex-col items-start gap-2 overflow-y-auto">
             <CoachHint />
+            <LivingHud />
             <SelectionHud />
           </div>
           <RegionRail />
@@ -284,6 +286,7 @@ export function AtlasApp() {
               Appearances
             </button>
             <SelectionHud />
+            <LivingHud />
             <FigurePlate />
             <HoverChip />
             <Inspector />

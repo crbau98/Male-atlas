@@ -68,6 +68,8 @@ export function ExperienceControls() {
   const setPhysiologyIntensity = useAtlas((s) => s.setPhysiologyIntensity);
   const breathingOn = useAtlas((s) => s.breathingOn);
   const toggleBreathing = useAtlas((s) => s.toggleBreathing);
+  const affect = useAtlas((s) => s.affect);
+  const arousal = useAtlas((s) => s.arousal);
 
   return (
     <div className="grid w-full gap-3 rounded-2xl border border-white/8 bg-black/10 p-3">
@@ -77,7 +79,8 @@ export function ExperienceControls() {
             Living model
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--atlas-muted)]">
-            Touch flush, pressure response, and quiet resting motion.
+            Stroke the skin. Face and chest raise warmth; pelvis raises vascular arousal.
+            Breath and flush follow your touch.
           </p>
         </div>
         <button
@@ -110,6 +113,27 @@ export function ExperienceControls() {
           className="h-8 accent-[var(--atlas-accent)] disabled:opacity-35"
         />
       </label>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <div className="flex justify-between text-[10px] tracking-[0.16em] text-[var(--atlas-muted)] uppercase">
+            <span>Warmth</span>
+            <span>{Math.round(affect * 100)}</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/20">
+            <div className="h-full bg-[var(--atlas-accent)]" style={{ width: `${Math.round(affect * 100)}%` }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex justify-between text-[10px] tracking-[0.16em] text-[var(--atlas-muted)] uppercase">
+            <span>Arousal</span>
+            <span>{Math.round(arousal * 100)}</span>
+          </div>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-black/20">
+            <div className="h-full bg-[#c45a48]" style={{ width: `${Math.round(arousal * 100)}%` }} />
+          </div>
+        </div>
+      </div>
 
       <button
         type="button"

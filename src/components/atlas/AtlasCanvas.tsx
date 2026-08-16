@@ -2,78 +2,132 @@
 
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
+import * as THREE from "three";
+import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
+import { REGIONS } from "@/lib/regions";
+import { useIsPhone } from "@/lib/use-is-phone";
+import { AnatomyCallouts } from "./AnatomyCallouts";
 import { AnatomyLayers } from "./AnatomyLayers";
+import { CameraRig } from "./CameraRig";
+import { GhostShell } from "./GhostShell";
+import { Hotspots } from "./Hotspots";
 import { LoadBoundary } from "./LoadBoundary";
+import { LocalStudio } from "./LocalStudio";
+import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
+import { SectionPlanes } from "./SectionPlanes";
 
 function Lights() {
   return (
     <>
-      <hemisphereLight args={["#f2ebe3", "#1a1814", 0.7]} />
-      <directionalLight position={[2.5, 4.2, 2.2]} intensity={1.6} color="#fff4e8" />
-      <directionalLight position={[-3, 1.4, -2]} intensity={0.45} color="#8ea4c8" />
-      <spotLight
-        position={[0.4, 3.4, 1.2]}
-        angle={0.5}
-        penumbra={0.7}
-        intensity={1.1}
-        color="#ffe8d2"
+      <hemisphereLight args={["#f7f1ea", "#1a1612", 0.68]} />
+      <directionalLight
+        position={[2.6, 4.4, 2.4]}
+        intensity={1.42}
+        color="#fff6ea"
+        castShadow
+        shadow-mapSize={[2048, 2048]}
+        shadow-bias={-0.00012}
+        shadow-camera-near={0.4}
+        shadow-camera-far={7}
+        shadow-camera-left={-1.4}
+        shadow-camera-right={1.4}
+        shadow-camera-top={2.2}
+        shadow-camera-bottom={-0.2}
       />
+      <directionalLight position={[-2.8, 1.6, -1.8]} intensity={0.52} color="#9eb4d4" />
+      <directionalLight position={[0.1, 1.4, -2.4]} intensity={0.38} color="#ffd4b8" />
+      <spotLight
+        position={[0.35, 3.5, 1.35]}
+        angle={0.48}
+        penumbra={0.9}
+        intensity={0.78}
+        color="#ffe6d0"
+      />
+      <pointLight position={[0, 1.1, 1.6]} intensity={0.32} color="#ffd8c0" distance={4} />
     </>
   );
 }
 
 export function AtlasCanvas() {
-  const brainFocus = useAtlas((s) => s.brainFocus);
+  const phone = useIsPhone();
+  const cameraGoal = useAtlas((s) => s.cameraGoal);
+  const selectedId = useAtlas((s) => s.selectedId);
+  const dissection = useAtlas((s) => s.dissection);
+  const start = REGIONS.full;
+  const paper = dissection > 0.16;
 
   return (
     <Canvas
-      dpr={[1, 1.6]}
+      shadows
+      dpr={phone ? [1.5, 2] : [1.75, 2]}
       gl={{
         antialias: true,
         localClippingEnabled: true,
         powerPreference: "high-performance",
+        toneMapping: THREE.ACESFilmicToneMapping,
+        toneMappingExposure: 1.14,
+        outputColorSpace: THREE.SRGBColorSpace,
       }}
       camera={{
-        position: brainFocus ? [0.18, 1.58, 0.58] : [0, 0.95, 2.35],
-        fov: 35,
-        near: 0.05,
-        far: 20,
+        position: start.eye,
+        fov: phone ? 36 : 30,
+        near: 0.04,
+        far: 16,
       }}
+      style={{ touchAction: "none" }}
       onPointerMissed={() => useAtlas.getState().select(null)}
     >
-      <color attach="background" args={["#0b0d12"]} />
-      <fog attach="fog" args={["#0b0d12", 4.5, 9]} />
+      <color attach="background" args={[paper ? "#e8dcc8" : "#0c0e14"]} />
       <Lights />
-      <Environment preset="studio" />
+      <LocalStudio />
       <Suspense fallback={null}>
         <LoadBoundary>
           <PhotorealShell />
         </LoadBoundary>
         <LoadBoundary>
+          <GhostShell />
+        </LoadBoundary>
+        <LoadBoundary>
+          <PhotorealGenitals />
+        </LoadBoundary>
+        <LoadBoundary>
           <AnatomyLayers />
         </LoadBoundary>
+        <Hotspots />
+        <AnatomyCallouts />
+        <SectionPlanes />
       </Suspense>
       <ContactShadows
         position={[0, 0.001, 0]}
-        opacity={0.45}
+        opacity={0.38}
         scale={3}
-        blur={2.2}
-        far={1.8}
+        blur={2.8}
+        far={2.2}
+        resolution={1024}
       />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
-        <circleGeometry args={[3.2, 64]} />
-        <meshStandardMaterial color="#12141b" roughness={0.9} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow>
+        <circleGeometry args={[3.2, 96]} />
+        <meshStandardMaterial color={paper ? "#d9ccb4" : "#12141c"} roughness={0.92} metalness={0} />
       </mesh>
+      <CameraRig />
       <OrbitControls
         makeDefault
         enablePan
-        minDistance={0.25}
-        maxDistance={5}
-        maxPolarAngle={Math.PI * 0.92}
-        target={brainFocus ? [0, 1.54, 0] : [0, 0.92, 0]}
+        enableDamping
+        dampingFactor={0.072}
+        autoRotate={!cameraGoal && !selectedId}
+        autoRotateSpeed={0.22}
+        minDistance={0.14}
+        maxDistance={4.6}
+        maxPolarAngle={Math.PI * 0.94}
+        target={start.target}
+        touches={{
+          ONE: TOUCH.ROTATE,
+          TWO: TOUCH.DOLLY_PAN,
+        }}
       />
     </Canvas>
   );

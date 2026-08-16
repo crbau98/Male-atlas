@@ -17,14 +17,24 @@ body {
   height: 100%;
   background: var(--background);
   color: var(--foreground);
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
 }
 
 body {
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+button,
+a,
+summary {
+  touch-action: manipulation;
+}
+
 input[type="range"] {
   width: 100%;
+  touch-action: pan-y;
 }
 
 details summary::-webkit-details-marker {

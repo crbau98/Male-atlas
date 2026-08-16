@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtlas } from "@/lib/atlas-store";
+import { REGIONS, type RegionId } from "@/lib/regions";
 import { AppearanceStrip } from "./AppearanceSelect";
 
 function Slider({
@@ -17,7 +18,7 @@ function Slider({
   max?: number;
 }) {
   return (
-    <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">
+    <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">
       {label}
       <input
         type="range"
@@ -26,31 +27,55 @@ function Slider({
         step={0.01}
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="accent-[#c4a46c]"
+        className="h-8 accent-[#c4a46c]"
       />
     </label>
   );
 }
 
-export function LayerBar() {
+export function LayerBar({ compact = false }: { compact?: boolean }) {
   const dissection = useAtlas((s) => s.dissection);
   const explode = useAtlas((s) => s.explode);
   const clipY = useAtlas((s) => s.clipY);
   const clipEnabled = useAtlas((s) => s.clipEnabled);
   const photoreal = useAtlas((s) => s.photoreal);
-  const brainFocus = useAtlas((s) => s.brainFocus);
+  const region = useAtlas((s) => s.region);
+  const tourIndex = useAtlas((s) => s.tourIndex);
   const setDissection = useAtlas((s) => s.setDissection);
   const setExplode = useAtlas((s) => s.setExplode);
   const setClipY = useAtlas((s) => s.setClipY);
   const setClipEnabled = useAtlas((s) => s.setClipEnabled);
   const setPhotoreal = useAtlas((s) => s.setPhotoreal);
-  const setBrainFocus = useAtlas((s) => s.setBrainFocus);
+  const goRegion = useAtlas((s) => s.goRegion);
+  const startTour = useAtlas((s) => s.startTour);
+  const stopTour = useAtlas((s) => s.stopTour);
   const resetView = useAtlas((s) => s.resetView);
   const setPeel = useAtlas((s) => s.setPeel);
+  const undoHide = useAtlas((s) => s.undoHide);
+  const focusSelection = useAtlas((s) => s.focusSelection);
+  const selectedId = useAtlas((s) => s.selectedId);
+  const showLabels = useAtlas((s) => s.showLabels);
+  const toggleLabels = useAtlas((s) => s.toggleLabels);
+  const clipMode = useAtlas((s) => s.clipMode);
+  const setClipMode = useAtlas((s) => s.setClipMode);
+  const contextOn = useAtlas((s) => s.contextOn);
+  const toggleContext = useAtlas((s) => s.toggleContext);
+  const pathwayOn = useAtlas((s) => s.pathwayOn);
+  const togglePathway = useAtlas((s) => s.togglePathway);
+  const xrayOn = useAtlas((s) => s.xrayOn);
+  const toggleXray = useAtlas((s) => s.toggleXray);
+  const demoIndex = useAtlas((s) => s.demoIndex);
+  const startDemo = useAtlas((s) => s.startDemo);
+  const stopDemo = useAtlas((s) => s.stopDemo);
+
+  const chip = (on: boolean) =>
+    `min-h-11 rounded-full px-3 py-1.5 text-xs ${
+      on ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
+    }`;
 
   return (
-    <div className="pointer-events-auto flex flex-wrap items-end gap-4 rounded-2xl border border-white/10 bg-[#101218]/88 px-5 py-4 backdrop-blur-md">
-      <AppearanceStrip />
+    <div className="pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
+      {compact ? null : <AppearanceStrip />}
       <Slider
         label="Dissection"
         value={dissection}
@@ -60,50 +85,84 @@ export function LayerBar() {
         }}
       />
       <Slider label="Explode" value={explode} onChange={setExplode} />
-      <Slider
-        label="Clip height"
-        value={clipY}
-        min={0}
-        max={1.8}
-        onChange={(v) => {
-          setClipY(v);
-          setClipEnabled(true);
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => setPhotoreal(!photoreal)}
-        className={`rounded-full px-3 py-1.5 text-xs ${
-          photoreal ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
-        }`}
-      >
-        Photoreal
-      </button>
-      <button
-        type="button"
-        onClick={() => setBrainFocus(!brainFocus)}
-        className={`rounded-full px-3 py-1.5 text-xs ${
-          brainFocus ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
-        }`}
-      >
-        Brain
-      </button>
-      <button
-        type="button"
-        onClick={() => setClipEnabled(!clipEnabled)}
-        className={`rounded-full px-3 py-1.5 text-xs ${
-          clipEnabled ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
-        }`}
-      >
-        Clip
-      </button>
-      <button
-        type="button"
-        onClick={resetView}
-        className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6]"
-      >
-        Reset
-      </button>
+      {compact ? null : (
+        <Slider
+          label="Clip height"
+          value={clipY}
+          min={0}
+          max={1.8}
+          onChange={(v) => {
+            setClipY(v);
+            setClipEnabled(true);
+          }}
+        />
+      )}
+      <div className="flex w-full flex-wrap gap-2">
+        {(Object.keys(REGIONS) as RegionId[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => goRegion(id)}
+            className={chip(region === id)}
+          >
+            {REGIONS[id].label}
+          </button>
+        ))}
+        <button type="button" onClick={() => (tourIndex === null ? startTour() : stopTour())} className={chip(tourIndex !== null)}>
+          Tour
+        </button>
+        <button type="button" onClick={() => (demoIndex === null ? startDemo() : stopDemo())} className={chip(demoIndex !== null)}>
+          Demo
+        </button>
+        <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
+          Nude
+        </button>
+        {compact ? null : (
+          <button type="button" onClick={() => setClipEnabled(!clipEnabled)} className={chip(clipEnabled)}>
+            Clip
+          </button>
+        )}
+        <button type="button" onClick={resetView} className={chip(false)}>
+          Reset
+        </button>
+        <button type="button" onClick={undoHide} className={chip(false)}>
+          Undo hide
+        </button>
+        <button
+          type="button"
+          onClick={focusSelection}
+          className={chip(Boolean(selectedId))}
+        >
+          Focus
+        </button>
+        <button type="button" onClick={toggleLabels} className={chip(showLabels)}>
+          Plates
+        </button>
+        <button type="button" onClick={toggleContext} className={chip(contextOn)}>
+          Context
+        </button>
+        <button type="button" onClick={togglePathway} className={chip(pathwayOn)}>
+          Pathway
+        </button>
+        <button type="button" onClick={toggleXray} className={chip(xrayOn)}>
+          X-ray
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "sagittal" ? "off" : "sagittal")} className={chip(clipMode === "sagittal")}>
+          Sagittal
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "coronal" ? "off" : "coronal")} className={chip(clipMode === "coronal")}>
+          Coronal
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "axial" ? "off" : "axial")} className={chip(clipMode === "axial")}>
+          Axial
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "quarter" ? "off" : "quarter")} className={chip(clipMode === "quarter")}>
+          Quarter
+        </button>
+        <button type="button" onClick={() => setClipMode(clipMode === "hemi" ? "off" : "hemi")} className={chip(clipMode === "hemi")}>
+          Hemi
+        </button>
+      </div>
     </div>
   );
 }

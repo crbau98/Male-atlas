@@ -1,12 +1,10 @@
 "use client";
 
-import catalog from "@/data/catalog.json";
+import { catalog, findPart } from "@/lib/catalog";
 import { describePart } from "@/lib/descriptions";
 import { useAtlas } from "@/lib/atlas-store";
 import { SYSTEM_META, type SystemId } from "@/lib/systems";
-import type { CatalogPart } from "@/lib/types";
-
-const parts = catalog.parts as CatalogPart[];
+import { pathwayLabel, pathwayMembers } from "@/lib/pathways";
 
 export function Inspector() {
   const selectedId = useAtlas((s) => s.selectedId);
@@ -14,12 +12,13 @@ export function Inspector() {
   const isolate = useAtlas((s) => s.toggleIsolate);
   const hideSelected = useAtlas((s) => s.hideSelected);
   const isolated = useAtlas((s) => s.isolated);
+  const familyOn = useAtlas((s) => s.familyOn);
   const id = selectedId ?? hoveredId;
-  const part = parts.find((p) => p.id === id);
+  const part = findPart(id);
 
   if (!part) {
     return (
-      <aside className="pointer-events-auto w-80 rounded-2xl border border-white/10 bg-[#101218]/88 p-5 text-sm text-[#b7b3aa] backdrop-blur-md">
+      <aside className="pointer-events-auto w-full max-w-sm rounded-2xl border border-white/10 bg-[#101218]/88 p-5 text-sm text-[#b7b3aa] backdrop-blur-md">
         <p className="text-xs tracking-[0.22em] text-[#c4a46c] uppercase">
           Inspector
         </p>
@@ -27,7 +26,7 @@ export function Inspector() {
           Click through the living surface
         </h2>
         <p className="mt-3 leading-6">
-          Drag to orbit. Click the photoreal body to open an anatomical window.
+          Drag to orbit. Tap the photoreal body to open an anatomical window.
           Raise dissection to peel skin, muscle, viscera, vessels, then bone and
           brain. {catalog.meta.partCount || "—"} named meshes from BodyParts3D.
         </p>
@@ -36,9 +35,11 @@ export function Inspector() {
   }
 
   const system = SYSTEM_META[part.system as SystemId];
+  const path = pathwayLabel(part.name);
+  const members = pathwayMembers(part.name, 6);
 
   return (
-    <aside className="pointer-events-auto w-80 rounded-2xl border border-white/10 bg-[#101218]/88 p-5 text-sm text-[#b7b3aa] backdrop-blur-md">
+    <aside className="pointer-events-auto w-full max-w-sm rounded-2xl border border-white/10 bg-[#101218]/88 p-5 text-sm text-[#b7b3aa] backdrop-blur-md">
       <p className="text-xs tracking-[0.22em] text-[#c4a46c] uppercase">
         {system?.label ?? part.system}
       </p>
@@ -62,6 +63,18 @@ export function Inspector() {
       <p className="mt-4 leading-6">
         {describePart(part.name, part.system, part.fmaId)}
       </p>
+      {path ? (
+        <div className="mt-3">
+          <p className="text-[10px] tracking-[0.18em] text-[#c4a46c] uppercase">{path}</p>
+          <ul className="mt-1 space-y-0.5 text-xs">
+            {members.map((m) => (
+              <li key={m.id} className="text-[#efece6]">
+                {m.name}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       {part.aliases.length > 0 ? (
         <p className="mt-3 text-xs leading-5">
           Also represented as {part.aliases.slice(0, 6).join(", ")}
@@ -69,20 +82,34 @@ export function Inspector() {
         </p>
       ) : null}
       {selectedId ? (
-        <div className="mt-4 flex gap-2">
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={isolate}
-            className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
+            className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
           >
             {isolated ? "Show neighbors" : "Isolate"}
           </button>
           <button
             type="button"
             onClick={hideSelected}
-            className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
+            className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
           >
             Hide
+          </button>
+          <button
+            type="button"
+            onClick={() => useAtlas.getState().toggleFamily()}
+            className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
+          >
+            {familyOn ? "Family on" : "Family"}
+          </button>
+          <button
+            type="button"
+            onClick={() => useAtlas.getState().toggleXray()}
+            className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6] hover:border-[#c4a46c]"
+          >
+            X-ray
           </button>
         </div>
       ) : null}

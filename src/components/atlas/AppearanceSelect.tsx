@@ -64,11 +64,12 @@ export function AppearanceSelect() {
         </div>
 
         <p className="max-w-3xl text-[11px] leading-5 text-[#7d796f]">
-          Appearances are photoreal skin, hair and iris looks on the nude
-          volunteer. External genitalia use BodyParts3D IS-A meshes (glans,
-          corpora, testes) with skin shading; tap Pelvis to inspect them.
-          Gallery portraits are clothed references. BodyParts3D, © The Database
-          Center for Life Science, CC BY 4.0.
+          Appearances tint the photoreal male surface (hair, melanin, iris).
+          External genitalia use BodyParts3D IS-A meshes (glans, corpora,
+          testes) with skin shading; tap Pelvis to inspect them. Gallery
+          portraits are clothed references. Body mesh: Blender Studio Human
+          Base Meshes, CC0. Anatomy: BodyParts3D, © The Database Center for
+          Life Science, CC BY 4.0.
         </p>
       </div>
     </div>

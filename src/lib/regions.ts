@@ -72,7 +72,7 @@ export type TourStep = {
 export const TOUR: TourStep[] = [
   {
     title: "Living surface",
-    body: "A living photoreal surface. Peel it to open textbook plates: numbered callouts, ink rims, and Netter-style color.",
+    body: "A living photoreal male. Peel the skin to open textbook plates: numbered callouts, ink rims, and Netter-style color.",
     region: "full",
     explode: 0,
   },

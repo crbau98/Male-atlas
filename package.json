@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "ingest": "python3 scripts/ingest_bodyparts3d.py",
-    "ingest:genitals": "python3 scripts/ingest_genitals.py"
+    "ingest:genitals": "python3 scripts/ingest_genitals.py",
+    "export:photoreal": "python3 scripts/prepare_photoreal_photos.py && blender -b -P scripts/export_photoreal_male.py"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.8",

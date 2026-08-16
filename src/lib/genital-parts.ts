@@ -37,10 +37,10 @@ export function isPelvisPoint(point: [number, number, number] | null): boolean {
 
 /** Hit-test the volunteer skin's genital region in atlas meters. */
 export function pickGenitalFromPoint(x: number, y: number, z: number): string | null {
-  if (z < 0.1 || Math.abs(x) > 0.06 || y < 0.74 || y > 0.88) return null;
-  if (Math.abs(x) < 0.018 && y > 0.784 && y < 0.822 && z > 0.182) return "FJ3134";
-  if (Math.abs(x) < 0.038 && y > 0.776 && y < 0.872 && z > 0.12) return "FJ3132";
-  if (Math.abs(x) < 0.052 && y > 0.748 && y < 0.802 && z > 0.12 && z < 0.185) {
+  if (z < 0.04 || Math.abs(x) > 0.08 || y < 0.74 || y > 0.92) return null;
+  if (Math.abs(x) < 0.018 && y > 0.784 && y < 0.822 && z > 0.12) return "FJ3134";
+  if (Math.abs(x) < 0.038 && y > 0.776 && y < 0.872 && z > 0.08) return "FJ3132";
+  if (Math.abs(x) < 0.055 && y > 0.748 && y < 0.82 && z > 0.04 && z < 0.16) {
     return "scrotum";
   }
   return null;

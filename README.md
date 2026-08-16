@@ -11,7 +11,7 @@ On a phone the atlas **opens straight into the 3D view** (Julian, or your last l
 
 Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Side arrows step Full → Brain → Chest → Belly → Pelvis. Gold markers jump the camera. **Tour** walks the layers with Back/Next. **Focus** flies in on the selected mesh; **Pin label** keeps a numbered callout; **Plates** toggles the figure labels. Bottom tabs: View, Parts, Info.
 
-The volunteer skin mesh has **no UVs**, so the atlas shades it in world space (lips, eyes, hair, areola, palms, scrotum) using the real mesh landmarks. Peel a window and a **ghost inner shell** keeps the body cavity. **Sagittal / coronal / axial** cut textbook sections. **Context** dims other systems so the selected organ reads as the figure.
+The live surface is a **UV-mapped photoreal adult male** (Blender Studio Human Base Meshes, CC0) with a photographic albedo. Tap or hold the skin to peel into BodyParts3D plates; a **ghost inner shell** keeps the body cavity. **Sagittal / coronal / axial** cut textbook sections. **Context** dims other systems so the selected organ reads as the figure.
 
 ## Run
 
@@ -26,11 +26,11 @@ Open [http://localhost:3000](http://localhost:3000). Tap **Open the atlas** or p
 
 ## Nude genitalia
 
-The volunteer skin mesh includes the external genitalia. The atlas:
+The photoreal body mesh has no external genitalia. The atlas:
 
-1. Opens a window in the skin over the penile shaft
+1. Opens a window in the skin over the pelvic surface
 2. Draws BodyParts3D IS-A meshes for glans (`FJ3134`) and corpus cavernosum (`FJ3132`) with photoreal skin/mucosa
-3. Paints scrotum and pubic hair on the remaining volunteer surface
+3. Blends pubic hair at the pelvic opening
 4. Reveals corpus spongiosum, testes, and epididymides as you peel or raise dissection
 
 ## Data
@@ -39,7 +39,7 @@ Meshes come from [BodyParts3D 4.0](https://dbarchive.biosciencedbc.jp/en/bodypar
 
 Required credit: **BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International**.
 
-Gallery portraits are clothed appearance references, not the 3D face geometry.
+Gallery portraits are clothed appearance references. The 3D surface is a photographic bake on the realistic male base mesh, then tinted per look.
 
 This is an educational atlas, not a diagnostic device. BodyParts3D authors note residual mapping errors.
 

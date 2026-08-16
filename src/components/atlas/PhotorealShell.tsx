@@ -2,7 +2,7 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { useGLTF } from "@react-three/drei";
+import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
@@ -13,6 +13,9 @@ import { closeupAmount } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
 import { haptic } from "@/lib/haptics";
+
+const BODY_URL = "/models/photoreal-male.glb";
+const ALBEDO_URL = "/skins/photoreal-male-albedo.png";
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -68,7 +71,15 @@ export function PhotorealShell() {
   };
 
   const appearance = appearanceById(appearanceId ?? "julian");
-  const gltf = useGLTF("/models/systems/integument.glb");
+  const gltf = useGLTF(BODY_URL);
+  const albedo = useTexture(ALBEDO_URL, (tex) => {
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.flipY = false;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.anisotropy = 8;
+    tex.needsUpdate = true;
+  });
 
   const uniforms = useRef({
     uDissection: { value: 0 },
@@ -90,9 +101,22 @@ export function PhotorealShell() {
     uMotionAmount: { value: 0 },
   });
 
+  const eyeMaterial = useMemo(() => {
+    return new THREE.MeshPhysicalMaterial({
+      color: appearance.eyes,
+      roughness: 0.06,
+      metalness: 0,
+      clearcoat: 1,
+      clearcoatRoughness: 0.08,
+      envMapIntensity: 1.15,
+      ior: 1.4,
+    });
+  }, [appearance.eyes]);
+
   const material = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
-      color: appearance.skinTint,
+      map: albedo,
+      color: "#ffffff",
       roughness: 0.38 + appearance.melanin * 0.08,
       metalness: 0,
       sheen: 0.72,
@@ -122,9 +146,9 @@ export function PhotorealShell() {
         uMotionAmount: uniforms.current.uMotionAmount,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v7-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v1-${appearance.id}`;
     return mat;
-  }, [appearance]);
+  }, [albedo, appearance]);
 
   useLayoutEffect(() => {
     skinMat.current = material;
@@ -183,17 +207,25 @@ export function PhotorealShell() {
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (!mesh.isMesh) return;
-      const isSkin = mesh.name === "FJ2810";
+      if (mesh.name.startsWith("PhotorealEye")) {
+        mesh.visible = true;
+        mesh.material = eyeMaterial;
+        mesh.castShadow = false;
+        mesh.receiveShadow = true;
+        mesh.raycast = () => undefined;
+        eyeMaterial.clippingPlanes = planes;
+        return;
+      }
+      const isSkin = mesh.name === "PhotorealMale";
       mesh.visible = isSkin;
       if (!isSkin) return;
-      mesh.geometry.computeVertexNormals();
       mesh.material = material;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       material.clippingPlanes = planes;
       material.clipShadows = true;
     });
-  }, [gltf.scene, material, planes]);
+  }, [eyeMaterial, gltf.scene, material, planes]);
 
   if (!photoreal) return null;
 
@@ -261,5 +293,6 @@ export function PhotorealShell() {
   );
 }
 
-useGLTF.preload("/models/systems/integument.glb");
+useGLTF.preload(BODY_URL);
+useTexture.preload(ALBEDO_URL);
 useGLTF.preload("/models/systems/reproductive.glb");

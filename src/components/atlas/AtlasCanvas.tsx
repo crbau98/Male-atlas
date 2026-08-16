@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useCallback, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -8,6 +8,8 @@ import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
 import { REGIONS } from "@/lib/regions";
 import { useIsPhone } from "@/lib/use-is-phone";
+import { canvasRef } from "@/lib/canvas-ref";
+import { haptic } from "@/lib/haptics";
 import { AnatomyCallouts } from "./AnatomyCallouts";
 import { AnatomyLayers } from "./AnatomyLayers";
 import { CameraRig } from "./CameraRig";
@@ -51,6 +53,27 @@ function Lights() {
   );
 }
 
+function ContextLossOverlay({ onReload }: { onReload: () => void }) {
+  return (
+    <div className="pointer-events-auto absolute inset-0 z-40 grid place-items-center bg-[#07080c]/95">
+      <div className="w-[min(20rem,84vw)] rounded-2xl border border-white/10 bg-[#101218]/95 p-5 text-center backdrop-blur-md">
+        <p className="text-[10px] tracking-[0.28em] text-[#c4a46c] uppercase">Male Atlas</p>
+        <p className="mt-2 font-serif text-xl text-[#efece6]">Graphics ran low on memory</p>
+        <p className="mt-2 text-[12px] leading-5 text-[#9a958c]">
+          The phone paused 3D rendering to free up memory. Tap below to pick back up right where you were.
+        </p>
+        <button
+          type="button"
+          onClick={onReload}
+          className="mt-4 min-h-11 w-full rounded-full bg-[#c4a46c] px-4 text-sm font-medium text-[#16140f]"
+        >
+          Reload the body
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function AtlasCanvas() {
   const phone = useIsPhone();
   const cameraGoal = useAtlas((s) => s.cameraGoal);
@@ -58,77 +81,111 @@ export function AtlasCanvas() {
   const dissection = useAtlas((s) => s.dissection);
   const start = REGIONS.full;
   const paper = dissection > 0.16;
+  const [contextLost, setContextLost] = useState(false);
+  const lastMissedTap = useRef(0);
+  const resetView = useAtlas((s) => s.resetView);
+
+  const handleMissed = useCallback(() => {
+    const now = performance.now();
+    if (now - lastMissedTap.current < 380) {
+      haptic([12, 30, 12]);
+      resetView();
+      lastMissedTap.current = 0;
+      return;
+    }
+    lastMissedTap.current = now;
+    useAtlas.getState().select(null);
+  }, [resetView]);
+
+  const handleCreated = useCallback((state: { gl: THREE.WebGLRenderer }) => {
+    const canvas = state.gl.domElement;
+    canvasRef.current = canvas;
+    canvas.addEventListener(
+      "webglcontextlost",
+      (event) => {
+        event.preventDefault();
+        setContextLost(true);
+      },
+      false,
+    );
+    canvas.addEventListener("webglcontextrestored", () => setContextLost(false), false);
+  }, []);
 
   return (
-    <Canvas
-      shadows
-      dpr={phone ? [1.5, 2] : [1.75, 2]}
-      gl={{
-        antialias: true,
-        localClippingEnabled: true,
-        powerPreference: "high-performance",
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.14,
-        outputColorSpace: THREE.SRGBColorSpace,
-      }}
-      camera={{
-        position: start.eye,
-        fov: phone ? 36 : 30,
-        near: 0.04,
-        far: 16,
-      }}
-      style={{ touchAction: "none" }}
-      onPointerMissed={() => useAtlas.getState().select(null)}
-    >
-      <color attach="background" args={[paper ? "#e8dcc8" : "#0c0e14"]} />
-      <Lights />
-      <LocalStudio />
-      <Suspense fallback={null}>
-        <LoadBoundary>
-          <PhotorealShell />
-        </LoadBoundary>
-        <LoadBoundary>
-          <GhostShell />
-        </LoadBoundary>
-        <LoadBoundary>
-          <PhotorealGenitals />
-        </LoadBoundary>
-        <LoadBoundary>
-          <AnatomyLayers />
-        </LoadBoundary>
-        <Hotspots />
-        <AnatomyCallouts />
-        <SectionPlanes />
-      </Suspense>
-      <ContactShadows
-        position={[0, 0.001, 0]}
-        opacity={0.38}
-        scale={3}
-        blur={2.8}
-        far={2.2}
-        resolution={1024}
-      />
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow>
-        <circleGeometry args={[3.2, 96]} />
-        <meshStandardMaterial color={paper ? "#d9ccb4" : "#12141c"} roughness={0.92} metalness={0} />
-      </mesh>
-      <CameraRig />
-      <OrbitControls
-        makeDefault
-        enablePan
-        enableDamping
-        dampingFactor={0.072}
-        autoRotate={!cameraGoal && !selectedId}
-        autoRotateSpeed={0.22}
-        minDistance={0.14}
-        maxDistance={4.6}
-        maxPolarAngle={Math.PI * 0.94}
-        target={start.target}
-        touches={{
-          ONE: TOUCH.ROTATE,
-          TWO: TOUCH.DOLLY_PAN,
+    <div className="relative h-full w-full">
+      <Canvas
+        shadows
+        dpr={phone ? [1.5, 2] : [1.75, 2]}
+        gl={{
+          antialias: true,
+          localClippingEnabled: true,
+          powerPreference: "high-performance",
+          preserveDrawingBuffer: true,
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 1.14,
+          outputColorSpace: THREE.SRGBColorSpace,
         }}
-      />
-    </Canvas>
+        camera={{
+          position: start.eye,
+          fov: phone ? 36 : 30,
+          near: 0.04,
+          far: 16,
+        }}
+        style={{ touchAction: "none" }}
+        onPointerMissed={handleMissed}
+        onCreated={handleCreated}
+      >
+        <color attach="background" args={[paper ? "#e8dcc8" : "#0c0e14"]} />
+        <Lights />
+        <LocalStudio />
+        <Suspense fallback={null}>
+          <LoadBoundary>
+            <PhotorealShell />
+          </LoadBoundary>
+          <LoadBoundary>
+            <GhostShell />
+          </LoadBoundary>
+          <LoadBoundary>
+            <PhotorealGenitals />
+          </LoadBoundary>
+          <LoadBoundary>
+            <AnatomyLayers />
+          </LoadBoundary>
+          <Hotspots />
+          <AnatomyCallouts />
+          <SectionPlanes />
+        </Suspense>
+        <ContactShadows
+          position={[0, 0.001, 0]}
+          opacity={0.38}
+          scale={3}
+          blur={2.8}
+          far={2.2}
+          resolution={1024}
+        />
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow>
+          <circleGeometry args={[3.2, 96]} />
+          <meshStandardMaterial color={paper ? "#d9ccb4" : "#12141c"} roughness={0.92} metalness={0} />
+        </mesh>
+        <CameraRig />
+        <OrbitControls
+          makeDefault
+          enablePan
+          enableDamping
+          dampingFactor={0.072}
+          autoRotate={!cameraGoal && !selectedId}
+          autoRotateSpeed={0.22}
+          minDistance={0.14}
+          maxDistance={4.6}
+          maxPolarAngle={Math.PI * 0.94}
+          target={start.target}
+          touches={{
+            ONE: TOUCH.ROTATE,
+            TWO: TOUCH.DOLLY_PAN,
+          }}
+        />
+      </Canvas>
+      {contextLost ? <ContextLossOverlay onReload={() => window.location.reload()} /> : null}
+    </div>
   );
 }

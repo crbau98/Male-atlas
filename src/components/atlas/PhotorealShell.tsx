@@ -122,7 +122,7 @@ export function PhotorealShell() {
         uMotionAmount: uniforms.current.uMotionAmount,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v6-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v7-${appearance.id}`;
     return mat;
   }, [appearance]);
 
@@ -226,7 +226,7 @@ export function PhotorealShell() {
             const radius = useAtlas.getState().peelRadius;
             setPeelRadius(Math.min(0.32, radius + 0.012));
           }, 70);
-        }, 420);
+        }, 620);
       }}
       onPointerMove={(event: {
         point: THREE.Vector3;
@@ -247,7 +247,7 @@ export function PhotorealShell() {
         const dt = performance.now() - g.t;
         touchTarget.current = 0;
         stopHold();
-        if (!g.dragged && !g.peeled && dt < 420) startPeel(g.point, g.genital);
+        if (!g.dragged && !g.peeled && dt < 620) startPeel(g.point, g.genital);
       }}
       onPointerLeave={() => {
         touchTarget.current = 0;

@@ -7,13 +7,20 @@ export function AtlasLoader() {
   const { active, progress, loaded, total } = useProgress();
   const [slow, setSlow] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const pct = Math.min(100, Math.max(0, progress || 0));
-  const done = dismissed || (!active && pct >= 100);
+  const done = dismissed || initialLoadComplete;
 
   useEffect(() => {
     const id = window.setTimeout(() => setSlow(true), 18000);
     return () => window.clearTimeout(id);
   }, []);
+
+  useEffect(() => {
+    if (active || pct < 100 || initialLoadComplete) return;
+    const id = window.setTimeout(() => setInitialLoadComplete(true), 0);
+    return () => window.clearTimeout(id);
+  }, [active, initialLoadComplete, pct]);
 
   if (done) return null;
 

@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-function readPhone() {
-  if (typeof window === "undefined") return true;
-  return window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
-}
-
 export function useIsPhone() {
-  const [phone, setPhone] = useState(readPhone);
+  // Default matches the SSR guess (mobile-first) so the client's first
+  // hydration pass renders identical markup to the server and avoids a
+  // hydration mismatch; the real value is applied right after mount.
+  const [phone, setPhone] = useState(true);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 768px), (pointer: coarse)");

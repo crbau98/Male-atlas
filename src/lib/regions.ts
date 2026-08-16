@@ -72,13 +72,13 @@ export type TourStep = {
 export const TOUR: TourStep[] = [
   {
     title: "Living surface",
-    body: "Drag to orbit. Tap skin to peel a window. Hold to widen it. Double-tap a named part to isolate, then Focus to fly in.",
+    body: "A living photoreal surface. Peel it to open textbook plates: numbered callouts, ink rims, and Netter-style color.",
     region: "full",
     explode: 0,
   },
   {
     title: "Chest window",
-    body: "Heart, lungs, and great vessels sit in the thorax. Raise dissection to keep going inward.",
+    body: "Heart, lungs, and great vessels as an anatomical plate. Tap a number or Pin a structure to keep its label.",
     region: "chest",
     explode: 0,
   },

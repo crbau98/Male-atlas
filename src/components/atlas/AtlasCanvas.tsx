@@ -8,6 +8,7 @@ import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
 import { REGIONS } from "@/lib/regions";
 import { useIsPhone } from "@/lib/use-is-phone";
+import { AnatomyCallouts } from "./AnatomyCallouts";
 import { AnatomyLayers } from "./AnatomyLayers";
 import { CameraRig } from "./CameraRig";
 import { Hotspots } from "./Hotspots";
@@ -51,7 +52,9 @@ export function AtlasCanvas() {
   const phone = useIsPhone();
   const cameraGoal = useAtlas((s) => s.cameraGoal);
   const selectedId = useAtlas((s) => s.selectedId);
+  const dissection = useAtlas((s) => s.dissection);
   const start = REGIONS.full;
+  const paper = dissection > 0.16;
 
   return (
     <Canvas
@@ -74,7 +77,7 @@ export function AtlasCanvas() {
       style={{ touchAction: "none" }}
       onPointerMissed={() => useAtlas.getState().select(null)}
     >
-      <color attach="background" args={["#0c0e14"]} />
+      <color attach="background" args={[paper ? "#e8dcc8" : "#0c0e14"]} />
       <Lights />
       <LocalStudio />
       <Suspense fallback={null}>
@@ -88,6 +91,7 @@ export function AtlasCanvas() {
           <AnatomyLayers />
         </LoadBoundary>
         <Hotspots />
+        <AnatomyCallouts />
       </Suspense>
       <ContactShadows
         position={[0, 0.001, 0]}
@@ -99,7 +103,7 @@ export function AtlasCanvas() {
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]} receiveShadow>
         <circleGeometry args={[3.2, 96]} />
-        <meshStandardMaterial color="#12141c" roughness={0.92} metalness={0} />
+        <meshStandardMaterial color={paper ? "#d9ccb4" : "#12141c"} roughness={0.92} metalness={0} />
       </mesh>
       <CameraRig />
       <OrbitControls

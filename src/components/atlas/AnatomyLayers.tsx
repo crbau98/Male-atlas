@@ -10,6 +10,7 @@ import { GENITAL_MESH_IDS, isPelvisPoint } from "@/lib/genital-parts";
 import { SYSTEM_LOOK, SYSTEM_META, systemVisibleAtDepth, type SystemId } from "@/lib/systems";
 import { tapPart } from "@/lib/tap-part";
 import { useIsPhone } from "@/lib/use-is-phone";
+import { injectIllustrationShader, plateColor, plateKind } from "@/lib/plate-shader";
 
 const BRAINISH = /brain|gyrus|cortex|hippocamp|thalam|cerebell|brainstem|ventricle of brain|cerebral|white matter|forebrain|midbrain|hindbrain|hypothalamus|epithalamus|pons|medulla/i;
 
@@ -96,6 +97,13 @@ function SystemMeshes({ system }: { system: string }) {
         mesh.castShadow = false;
         mesh.receiveShadow = true;
         mesh.geometry.computeVertexNormals();
+        const part = partsById.get(mesh.name);
+        const cloned = mesh.material as THREE.MeshPhysicalMaterial;
+        const kind = plateKind(part, system);
+        cloned.color.set(plateColor(part, system, `#${color.getHexString()}`));
+        cloned.sheenColor = new THREE.Color(cloned.color).multiplyScalar(1.08);
+        cloned.onBeforeCompile = (shader) => injectIllustrationShader(shader, kind);
+        cloned.customProgramCacheKey = () => `plate-${kind}`;
         if (!origins.current.has(mesh.uuid)) {
           mesh.geometry.computeBoundingBox();
           const c = new THREE.Vector3();
@@ -108,7 +116,7 @@ function SystemMeshes({ system }: { system: string }) {
       cloned.clipShadows = true;
     });
     prepared.current = true;
-  }, [clipEnabled, clipPlane, gltf.scene, material]);
+  }, [clipEnabled, clipPlane, color, gltf.scene, material, system]);
 
   const depthVisible = !photoreal || dissection > 0.02 || Boolean(peelCenter);
   const systemEnabled = systemOn[system] !== false;

@@ -30,6 +30,8 @@ type AtlasState = {
   cameraGoal: CameraGoal | null;
   region: RegionId;
   tourIndex: number | null;
+  showLabels: boolean;
+  pinned: Array<{ id: string; point: Vec3 }>;
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -59,6 +61,8 @@ type AtlasState = {
   stopTour: () => void;
   applyTourStep: (index: number) => void;
   resetView: () => void;
+  toggleLabels: () => void;
+  pinSelection: () => void;
 };
 
 const defaultSystems = Object.fromEntries(SYSTEM_ORDER.map((s) => [s, true]));
@@ -99,6 +103,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   cameraGoal: null,
   region: "full",
   tourIndex: null,
+  showLabels: true,
+  pinned: [],
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
@@ -201,6 +207,18 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     get().applyTourStep(current - 1);
   },
   stopTour: () => set({ tourIndex: null }),
+  toggleLabels: () => set({ showLabels: !get().showLabels }),
+  pinSelection: () => {
+    const id = get().selectedId;
+    const point = get().selectedPoint;
+    if (!id || !point) return;
+    const pinned = get().pinned;
+    if (pinned.some((p) => p.id === id)) {
+      set({ pinned: pinned.filter((p) => p.id !== id) });
+      return;
+    }
+    set({ pinned: [...pinned, { id, point }], showLabels: true });
+  },
   resetView: () =>
     set({
       dissection: 0,
@@ -221,6 +239,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       region: "full",
       tourIndex: null,
       mobileTab: "view",
+      pinned: [],
+      showLabels: true,
     }),
 }));
 

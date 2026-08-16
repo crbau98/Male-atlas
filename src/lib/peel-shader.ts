@@ -21,18 +21,22 @@ export function injectPeelShader(
   shader.vertexShader = shader.vertexShader
     .replace(
       "#include <common>",
-      `#include <common>\nvarying vec3 vAtlasWorld;`,
+      `#include <common>
+       varying vec3 vAtlasWorld;
+       varying vec3 vAtlasNormal;`,
     )
     .replace(
       "#include <worldpos_vertex>",
       `#include <worldpos_vertex>
-       vAtlasWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
+       vAtlasWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
+       vAtlasNormal = normalize((modelMatrix * vec4(objectNormal, 0.0)).xyz);`,
     );
   shader.fragmentShader = shader.fragmentShader
     .replace(
       "#include <common>",
       `#include <common>
        varying vec3 vAtlasWorld;
+       varying vec3 vAtlasNormal;
        uniform float uDissection;
        uniform vec3 uWindowCenter;
        uniform float uWindowRadius;

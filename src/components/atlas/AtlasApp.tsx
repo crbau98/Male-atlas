@@ -11,6 +11,7 @@ import { Inspector } from "./Inspector";
 import { InstallHint } from "./InstallHint";
 import { LayerBar } from "./LayerBar";
 import { HoverChip } from "./HoverChip";
+import { FigurePlate } from "./FigurePlate";
 import { RegionRail } from "./RegionRail";
 import { SelectionHud } from "./SelectionHud";
 import { StructureTree } from "./StructureTree";
@@ -36,6 +37,8 @@ export function AtlasApp() {
   const focusSelection = useAtlas((s) => s.focusSelection);
   const goRegion = useAtlas((s) => s.goRegion);
   const goAdjacentRegion = useAtlas((s) => s.goAdjacentRegion);
+  const pinSelection = useAtlas((s) => s.pinSelection);
+  const toggleLabels = useAtlas((s) => s.toggleLabels);
   const mobileTab = useAtlas((s) => s.mobileTab);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const tourIndex = useAtlas((s) => s.tourIndex);
@@ -75,6 +78,8 @@ export function AtlasApp() {
       if (event.key === "3") goRegion("chest");
       if (event.key === "4") goRegion("abdomen");
       if (event.key === "5") goRegion("pelvis");
+      if (event.key === "p" || event.key === "P") pinSelection();
+      if (event.key === "l" || event.key === "L") toggleLabels();
       if (event.key === "t" || event.key === "T") {
         const touring = useAtlas.getState().tourIndex !== null;
         if (touring) stopTour();
@@ -83,7 +88,7 @@ export function AtlasApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, prevTour, resetView, setAppearance, stopTour, toggleIsolate, undoHide]);
+  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextTour, pinSelection, prevTour, resetView, setAppearance, stopTour, toggleIsolate, toggleLabels, undoHide]);
 
   useEffect(() => {
     if (tourIndex === null) return;
@@ -118,6 +123,7 @@ export function AtlasApp() {
           </div>
           <div className="pointer-events-none absolute inset-x-3 top-16 flex flex-col items-start gap-2">
             <SelectionHud />
+            <FigurePlate />
             <HoverChip />
           </div>
           <RegionRail />
@@ -178,6 +184,7 @@ export function AtlasApp() {
               Appearances
             </button>
             <SelectionHud />
+            <FigurePlate />
             <HoverChip />
             <Inspector />
           </div>

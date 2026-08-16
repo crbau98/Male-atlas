@@ -1,6 +1,6 @@
 # Male Atlas
 
-Interactive 3D atlas of an adult male: a photoreal nude surface that peels into named BodyParts3D anatomy (muscles, viscera, vessels, nerves, skeleton, parcellated brain, and male genitalia).
+Interactive 3D atlas of an adult male: a photoreal nude surface that peels into **textbook anatomical plates** — numbered callouts, ink rims, and Netter-style color on named BodyParts3D meshes (muscle, viscera, vessels, nerves, skeleton, brain, genitalia).
 
 ## Phone app
 
@@ -9,9 +9,9 @@ On a phone the atlas **opens straight into the 3D view** (Julian, or your last l
 - **iPhone:** Share → Add to Home Screen
 - **Android:** Chrome menu → Install app, or the in-app install chip
 
-Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Side arrows step Full → Brain → Chest → Belly → Pelvis. Gold markers jump the camera. **Tour** walks the layers with Back/Next. **Focus** flies in on the selected mesh; **Undo hide** restores it. Bottom tabs: View, Parts, Info.
+Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Side arrows step Full → Brain → Chest → Belly → Pelvis. Gold markers jump the camera. **Tour** walks the layers with Back/Next. **Focus** flies in on the selected mesh; **Pin label** keeps a numbered callout; **Plates** toggles the figure labels. Bottom tabs: View, Parts, Info.
 
-Skin maps are low-grain (smooth color, pore detail in the normal map that strengthens as you zoom). Fly-tos arc over about a second; peel, dissection, and explode ease instead of popping.
+The volunteer skin mesh has **no UVs**, so the atlas shades it in world space (lips, eyes, hair, areola, palms, scrotum) instead of tiling a noisy texture. Under the surface, anatomy is drawn as illustration plates, not plastic meshes.
 
 ## Run
 
@@ -26,7 +26,7 @@ Open [http://localhost:3000](http://localhost:3000). Tap **Open the atlas** or p
 
 ## Nude genitalia
 
-The volunteer skin mesh includes the external genitalia. A tiled albedo made that region look like generic skin, so the atlas now:
+The volunteer skin mesh includes the external genitalia. The atlas:
 
 1. Opens a window in the skin over the penile shaft
 2. Draws BodyParts3D IS-A meshes for glans (`FJ3134`) and corpus cavernosum (`FJ3132`) with photoreal skin/mucosa
@@ -46,4 +46,4 @@ This is an educational atlas, not a diagnostic device. BodyParts3D authors note 
 ## Keys
 
 - Click photoreal surface: peel window (genital region also selects the named part)
-- `T` tour, `Space` / `→` next step, `←` previous, `R` reset, `X` isolate, `H` hide, `U` undo hide, `F` focus, `1`–`5` regions, `[` `]` previous/next region, `Esc` appearances
+- `T` tour, `Space` / `→` next step, `←` previous, `R` reset, `X` isolate, `H` hide, `U` undo hide, `F` focus, `P` pin label, `L` plates on/off, `1`–`5` regions, `[` `]` previous/next region, `Esc` appearances

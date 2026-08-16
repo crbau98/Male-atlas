@@ -14,6 +14,8 @@ export function SelectionHud() {
   const hideSelected = useAtlas((s) => s.hideSelected);
   const undoHide = useAtlas((s) => s.undoHide);
   const focusSelection = useAtlas((s) => s.focusSelection);
+  const pinSelection = useAtlas((s) => s.pinSelection);
+  const pinned = useAtlas((s) => s.pinned);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const nextTour = useAtlas((s) => s.nextTour);
   const prevTour = useAtlas((s) => s.prevTour);
@@ -79,6 +81,13 @@ export function SelectionHud() {
               className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
             >
               Focus
+            </button>
+            <button
+              type="button"
+              onClick={pinSelection}
+              className="min-h-10 rounded-full border border-white/15 px-3 text-xs"
+            >
+              {pinned.some((p) => p.id === selectedId) ? "Unpin" : "Pin label"}
             </button>
             <button
               type="button"

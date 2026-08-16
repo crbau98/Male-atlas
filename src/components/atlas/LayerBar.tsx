@@ -54,6 +54,8 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const undoHide = useAtlas((s) => s.undoHide);
   const focusSelection = useAtlas((s) => s.focusSelection);
   const selectedId = useAtlas((s) => s.selectedId);
+  const showLabels = useAtlas((s) => s.showLabels);
+  const toggleLabels = useAtlas((s) => s.toggleLabels);
 
   const chip = (on: boolean) =>
     `min-h-11 rounded-full px-3 py-1.5 text-xs ${
@@ -122,6 +124,9 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
           className={chip(Boolean(selectedId))}
         >
           Focus
+        </button>
+        <button type="button" onClick={toggleLabels} className={chip(showLabels)}>
+          Plates
         </button>
       </div>
     </div>

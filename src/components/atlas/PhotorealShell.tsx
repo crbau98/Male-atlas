@@ -2,13 +2,14 @@
 
 import { useFrame, useThree } from "@react-three/fiber";
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { useGLTF, useTexture } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
 import { pickGenitalFromPoint } from "@/lib/genital-parts";
 import { injectPeelShader } from "@/lib/peel-shader";
-import { closeupAmount, prepSkinMap } from "@/lib/skin-maps";
+import { injectPhotorealSkin } from "@/lib/skin-shader";
+import { closeupAmount } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
 
 export function PhotorealShell() {
@@ -22,7 +23,6 @@ export function PhotorealShell() {
   const setPeelRadius = useAtlas((s) => s.setPeelRadius);
   const lookAt = useAtlas((s) => s.lookAt);
   const hold = useRef<ReturnType<typeof setInterval> | null>(null);
-  const gl = useThree((s) => s.gl);
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
   const lastPeel = useRef<string>("");
@@ -38,24 +38,6 @@ export function PhotorealShell() {
 
   const appearance = appearanceById(appearanceId ?? "julian");
   const gltf = useGLTF("/models/systems/integument.glb");
-  const [albedo, normal, roughness] = useTexture([
-    appearance.albedo,
-    appearance.normal,
-    appearance.roughness,
-  ]);
-  const anisotropy = Math.min(16, gl.capabilities.getMaxAnisotropy());
-  const albedoMap = useMemo(
-    () => prepSkinMap(albedo, true, anisotropy, 1),
-    [albedo, anisotropy],
-  );
-  const normalMap = useMemo(
-    () => prepSkinMap(normal, false, anisotropy, 2.15),
-    [anisotropy, normal],
-  );
-  const roughnessMap = useMemo(
-    () => prepSkinMap(roughness, false, anisotropy, 1),
-    [anisotropy, roughness],
-  );
 
   const uniforms = useRef({
     uDissection: { value: 0 },
@@ -65,77 +47,40 @@ export function PhotorealShell() {
     uSkinTint: { value: new THREE.Color(appearance.skinTint) },
     uMelanin: { value: appearance.melanin },
     uHasWindow: { value: 0 },
+    uEyeColor: { value: new THREE.Color(appearance.eyes) },
+    uSheenColor: { value: new THREE.Color(appearance.sheen) },
+    uClose: { value: 0 },
   });
 
   const material = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
       color: appearance.skinTint,
-      map: albedoMap,
-      normalMap: normalMap,
-      roughnessMap: roughnessMap,
-      normalScale: new THREE.Vector2(0.16, 0.16),
-      roughness: 0.46 + appearance.melanin * 0.06,
+      roughness: 0.38 + appearance.melanin * 0.08,
       metalness: 0,
-      sheen: 0.58,
+      sheen: 0.72,
       sheenColor: new THREE.Color(appearance.sheen),
-      sheenRoughness: 0.46,
-      clearcoat: 0.06,
-      clearcoatRoughness: 0.55,
+      sheenRoughness: 0.42,
+      clearcoat: 0.04,
+      clearcoatRoughness: 0.62,
       ior: 1.38,
-      specularIntensity: 0.55,
-      envMapIntensity: 0.92,
+      specularIntensity: 0.42,
+      envMapIntensity: 0.88,
       side: THREE.FrontSide,
     });
     mat.onBeforeCompile = (shader) => {
       injectPeelShader(shader, uniforms.current);
-      shader.uniforms.uHairColor = uniforms.current.uHairColor;
-      shader.uniforms.uSkinTint = uniforms.current.uSkinTint;
-      shader.uniforms.uMelanin = uniforms.current.uMelanin;
-      shader.fragmentShader = shader.fragmentShader
-        .replace(
-          "uniform float uHasWindow;",
-          `uniform float uHasWindow;
-           uniform vec3 uHairColor;
-           uniform vec3 uSkinTint;
-           uniform float uMelanin;`,
-        )
-        .replace(
-          "if (peel > 0.86 + peelEdge) discard;",
-          `if (peel > 0.86 + peelEdge) discard;
-           float axPenis = abs(vAtlasWorld.x);
-           float penisCover = (1.0 - smoothstep(0.020, 0.044, axPenis))
-             * smoothstep(0.776, 0.788, vAtlasWorld.y)
-             * (1.0 - smoothstep(0.848, 0.875, vAtlasWorld.y))
-             * smoothstep(0.150, 0.168, vAtlasWorld.z);
-           if (penisCover > 0.58) discard;`,
-        )
-        .replace(
-          "#include <color_fragment>",
-          `#include <color_fragment>
-           float axSkin = abs(vAtlasWorld.x);
-           diffuseColor.rgb = mix(uSkinTint, diffuseColor.rgb, 0.86);
-           float scalp = smoothstep(1.50, 1.61, vAtlasWorld.y) *
-             (1.0 - smoothstep(0.08, 0.145, length(vAtlasWorld.xz)));
-           float pubic = smoothstep(0.82, 0.86, vAtlasWorld.y) * (1.0 - smoothstep(0.92, 0.98, vAtlasWorld.y)) *
-             (1.0 - smoothstep(0.05, 0.11, axSkin)) *
-             smoothstep(0.07, 0.12, vAtlasWorld.z);
-           float strand = 0.62 + 0.38 * smoothstep(0.35, 0.95, abs(sin(vAtlasWorld.x * 92.0 + vAtlasWorld.z * 18.0)));
-           float scrotum = (1.0 - smoothstep(0.036, 0.058, axSkin))
-             * smoothstep(0.750, 0.766, vAtlasWorld.y)
-             * (1.0 - smoothstep(0.792, 0.810, vAtlasWorld.y))
-             * smoothstep(0.122, 0.142, vAtlasWorld.z)
-             * (1.0 - smoothstep(0.172, 0.190, vAtlasWorld.z));
-           vec3 scrotumCol = mix(uSkinTint, vec3(0.38, 0.24, 0.18), 0.22 + uMelanin * 0.16);
-           diffuseColor.rgb = mix(diffuseColor.rgb, scrotumCol, scrotum * 0.88);
-           float raphe = (1.0 - smoothstep(0.0012, 0.0048, axSkin)) * scrotum;
-           diffuseColor.rgb = mix(diffuseColor.rgb, scrotumCol * 0.72, raphe);
-           diffuseColor.rgb = mix(diffuseColor.rgb, uHairColor, scalp * (0.72 + 0.28 * strand));
-           diffuseColor.rgb = mix(diffuseColor.rgb, uHairColor, pubic * (0.45 + 0.4 * strand));`,
-        );
+      injectPhotorealSkin(shader, {
+        uHairColor: uniforms.current.uHairColor,
+        uSkinTint: uniforms.current.uSkinTint,
+        uMelanin: uniforms.current.uMelanin,
+        uEyeColor: uniforms.current.uEyeColor,
+        uSheenColor: uniforms.current.uSheenColor,
+        uClose: uniforms.current.uClose,
+      });
     };
-    mat.customProgramCacheKey = () => `peel-hq2-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v1-${appearance.id}`;
     return mat;
-  }, [albedoMap, appearance, normalMap, roughnessMap]);
+  }, [appearance]);
 
   useLayoutEffect(() => {
     skinMat.current = material;
@@ -147,6 +92,8 @@ export function PhotorealShell() {
     u.uHairColor.value.set(appearance.hair);
     u.uSkinTint.value.set(appearance.skinTint);
     u.uMelanin.value = appearance.melanin;
+    u.uEyeColor.value.set(appearance.eyes);
+    u.uSheenColor.value.set(appearance.sheen);
     const key = peelCenter ? peelCenter.join(",") : "";
     if (key !== lastPeel.current) {
       lastPeel.current = key;
@@ -165,12 +112,11 @@ export function PhotorealShell() {
     const target = orbit?.target ?? new THREE.Vector3(0, 0.92, 0);
     const close = closeupAmount(camera.position.distanceTo(target));
     closeAmt.current = THREE.MathUtils.damp(closeAmt.current, close, 4, delta);
-    const n = 0.1 + closeAmt.current * 0.34;
+    u.uClose.value = closeAmt.current;
     const mat = skinMat.current;
     if (mat) {
-      mat.normalScale.set(n, n);
-      mat.envMapIntensity = 0.82 + closeAmt.current * 0.28;
-      mat.sheen = 0.48 + closeAmt.current * 0.18;
+      mat.envMapIntensity = 0.78 + closeAmt.current * 0.3;
+      mat.sheen = 0.55 + closeAmt.current * 0.22;
     }
   });
 

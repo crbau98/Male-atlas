@@ -1,0 +1,42 @@
+"use client";
+
+import { findPart } from "@/lib/catalog";
+import { describePart } from "@/lib/descriptions";
+import { FIGURES } from "@/lib/figures";
+import { useAtlas } from "@/lib/atlas-store";
+
+export function FigurePlate() {
+  const region = useAtlas((s) => s.region);
+  const dissection = useAtlas((s) => s.dissection);
+  const peelCenter = useAtlas((s) => s.peelCenter);
+  const selectedId = useAtlas((s) => s.selectedId);
+  const showLabels = useAtlas((s) => s.showLabels);
+  const part = findPart(selectedId);
+  if (!showLabels) return null;
+  if (dissection < 0.08 && !peelCenter && !part) return null;
+
+  const plate =
+    FIGURES.find((f) => f.id === selectedId)?.plate ??
+    (region === "head" ? "Encephalon" : region === "chest" ? "Thorax" : region === "abdomen" ? "Abdomen" : region === "pelvis" ? "Pelvis" : "Adult male");
+
+  return (
+    <div className="pointer-events-none max-w-sm rounded-sm border border-[#2a241c]/25 bg-[#f7f1e4]/92 p-3 text-[#1f1a14] shadow-md backdrop-blur-sm">
+      <p className="text-[10px] tracking-[0.22em] text-[#8a1f1a] uppercase">
+        Plate · {plate}
+      </p>
+      <h3 className="font-serif text-xl leading-tight">
+        {part ? part.name : "Anatomical figure"}
+      </h3>
+      {part ? (
+        <p className="mt-1 text-[11px] leading-5 text-[#4a4338]">
+          {describePart(part.name, part.system, part.fmaId)} FMA {part.fmaId}.
+        </p>
+      ) : (
+        <p className="mt-1 text-[11px] leading-5 text-[#4a4338]">
+          Tap a numbered structure. Ink outlines and textbook color follow the
+          BodyParts3D mesh under the living surface.
+        </p>
+      )}
+    </div>
+  );
+}

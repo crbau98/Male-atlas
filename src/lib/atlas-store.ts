@@ -21,7 +21,9 @@ type AtlasState = {
   systemOn: Record<string, boolean>;
   search: string;
   brainFocus: boolean;
+  pelvisFocus: boolean;
   photoreal: boolean;
+  mobileTab: "view" | "parts" | "info";
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -35,7 +37,9 @@ type AtlasState = {
   toggleSystem: (id: string) => void;
   setSearch: (q: string) => void;
   setBrainFocus: (v: boolean) => void;
+  setPelvisFocus: (v: boolean) => void;
   setPhotoreal: (v: boolean) => void;
+  setMobileTab: (v: "view" | "parts" | "info") => void;
   resetView: () => void;
 };
 
@@ -56,7 +60,9 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   systemOn: defaultSystems,
   search: "",
   brainFocus: false,
+  pelvisFocus: false,
   photoreal: true,
+  mobileTab: "view",
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
@@ -80,9 +86,16 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   setBrainFocus: (brainFocus) =>
     set({
       brainFocus,
+      pelvisFocus: brainFocus ? false : get().pelvisFocus,
       dissection: brainFocus ? Math.max(get().dissection, 0.55) : get().dissection,
     }),
+  setPelvisFocus: (pelvisFocus) =>
+    set({
+      pelvisFocus,
+      brainFocus: pelvisFocus ? false : get().brainFocus,
+    }),
   setPhotoreal: (photoreal) => set({ photoreal }),
+  setMobileTab: (mobileTab) => set({ mobileTab }),
   resetView: () =>
     set({
       dissection: 0,
@@ -94,6 +107,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       isolated: false,
       hidden: new Set(),
       brainFocus: false,
+      pelvisFocus: false,
       photoreal: true,
       systemOn: defaultSystems,
     }),

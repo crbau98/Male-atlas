@@ -6,14 +6,8 @@ import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
-
-type PeelUniforms = {
-  uDissection: { value: number };
-  uWindowCenter: { value: THREE.Vector3 };
-  uWindowRadius: { value: number };
-  uHairColor: { value: THREE.Color };
-  uHasWindow: { value: number };
-};
+import { pickGenitalFromPoint } from "@/lib/genital-parts";
+import { injectPeelShader } from "@/lib/peel-shader";
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -23,6 +17,7 @@ export function PhotorealShell() {
   const photoreal = useAtlas((s) => s.photoreal);
   const setPeel = useAtlas((s) => s.setPeel);
   const setDissection = useAtlas((s) => s.setDissection);
+  const select = useAtlas((s) => s.select);
 
   const appearance = appearanceById(appearanceId ?? "julian");
   const gltf = useGLTF("/models/systems/integument.glb");
@@ -45,11 +40,13 @@ export function PhotorealShell() {
     return texture;
   }, [normal]);
 
-  const uniforms = useRef<PeelUniforms>({
+  const uniforms = useRef({
     uDissection: { value: 0 },
     uWindowCenter: { value: new THREE.Vector3() },
     uWindowRadius: { value: 0.12 },
     uHairColor: { value: new THREE.Color(appearance.hair) },
+    uSkinTint: { value: new THREE.Color(appearance.skinTint) },
+    uMelanin: { value: appearance.melanin },
     uHasWindow: { value: 0 },
   });
 
@@ -58,6 +55,8 @@ export function PhotorealShell() {
     u.uDissection.value = dissection;
     u.uWindowRadius.value = peelRadius;
     u.uHairColor.value.set(appearance.hair);
+    u.uSkinTint.value.set(appearance.skinTint);
+    u.uMelanin.value = appearance.melanin;
     u.uHasWindow.value = peelCenter ? 1 : 0;
     if (peelCenter) u.uWindowCenter.value.set(...peelCenter);
   });
@@ -83,54 +82,49 @@ export function PhotorealShell() {
       side: THREE.FrontSide,
     });
     mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uDissection = uniforms.current.uDissection;
-      shader.uniforms.uWindowCenter = uniforms.current.uWindowCenter;
-      shader.uniforms.uWindowRadius = uniforms.current.uWindowRadius;
+      injectPeelShader(shader, uniforms.current);
       shader.uniforms.uHairColor = uniforms.current.uHairColor;
-      shader.uniforms.uHasWindow = uniforms.current.uHasWindow;
-      shader.vertexShader = shader.vertexShader
-        .replace(
-          "#include <common>",
-          `#include <common>\nvarying vec3 vAtlasWorld;`,
-        )
-        .replace(
-          "#include <worldpos_vertex>",
-          `#include <worldpos_vertex>
-           vAtlasWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
-        );
+      shader.uniforms.uSkinTint = uniforms.current.uSkinTint;
+      shader.uniforms.uMelanin = uniforms.current.uMelanin;
       shader.fragmentShader = shader.fragmentShader
         .replace(
-          "#include <common>",
-          `#include <common>
-           varying vec3 vAtlasWorld;
-           uniform float uDissection;
-           uniform vec3 uWindowCenter;
-           uniform float uWindowRadius;
+          "uniform float uHasWindow;",
+          `uniform float uHasWindow;
            uniform vec3 uHairColor;
-           uniform float uHasWindow;`,
+           uniform vec3 uSkinTint;
+           uniform float uMelanin;`,
         )
         .replace(
-          "#include <clipping_planes_fragment>",
-          `#include <clipping_planes_fragment>
-           float windowAmt = 0.0;
-           if (uHasWindow > 0.5) {
-             windowAmt = 1.0 - smoothstep(uWindowRadius * 0.45, uWindowRadius, distance(vAtlasWorld, uWindowCenter));
-           }
-           float peel = max(uDissection, windowAmt);
-           if (peel > 0.88) discard;`,
+          "if (peel > 0.88) discard;",
+          `if (peel > 0.88) discard;
+           float axPenis = abs(vAtlasWorld.x);
+           float penisCover = (1.0 - smoothstep(0.020, 0.044, axPenis))
+             * smoothstep(0.776, 0.788, vAtlasWorld.y)
+             * (1.0 - smoothstep(0.848, 0.875, vAtlasWorld.y))
+             * smoothstep(0.150, 0.168, vAtlasWorld.z);
+           if (penisCover > 0.58) discard;`,
         )
         .replace(
           "#include <color_fragment>",
           `#include <color_fragment>
-           float windowAmt2 = 0.0;
-           if (uHasWindow > 0.5) {
-             windowAmt2 = 1.0 - smoothstep(uWindowRadius * 0.45, uWindowRadius, distance(vAtlasWorld, uWindowCenter));
-           }
-           float peel2 = max(uDissection, windowAmt2);
+           float axSkin = abs(vAtlasWorld.x);
            float scalp = smoothstep(1.50, 1.62, vAtlasWorld.y) *
              (1.0 - smoothstep(0.09, 0.15, length(vAtlasWorld.xz)));
+           float pubic = smoothstep(0.82, 0.86, vAtlasWorld.y) * (1.0 - smoothstep(0.92, 0.98, vAtlasWorld.y)) *
+             (1.0 - smoothstep(0.05, 0.11, axSkin)) *
+             smoothstep(0.07, 0.12, vAtlasWorld.z);
+           float scrotum = (1.0 - smoothstep(0.036, 0.058, axSkin))
+             * smoothstep(0.750, 0.766, vAtlasWorld.y)
+             * (1.0 - smoothstep(0.792, 0.810, vAtlasWorld.y))
+             * smoothstep(0.122, 0.142, vAtlasWorld.z)
+             * (1.0 - smoothstep(0.172, 0.190, vAtlasWorld.z));
+           float n = fract(sin(dot(vAtlasWorld.xyz, vec3(12.9898, 78.233, 37.719))) * 43758.5453);
+           vec3 scrotumCol = mix(uSkinTint, vec3(0.38, 0.24, 0.18), 0.28 + uMelanin * 0.18);
+           diffuseColor.rgb = mix(diffuseColor.rgb, scrotumCol, scrotum * 0.92);
+           float raphe = (1.0 - smoothstep(0.0012, 0.0048, axSkin)) * scrotum;
+           diffuseColor.rgb = mix(diffuseColor.rgb, scrotumCol * 0.68, raphe);
            diffuseColor.rgb = mix(diffuseColor.rgb, uHairColor, scalp * 0.94);
-           diffuseColor.a *= (1.0 - peel2 * 0.35);`,
+           diffuseColor.rgb = mix(diffuseColor.rgb, uHairColor, pubic * (0.58 + 0.42 * n));`,
         );
     };
     mat.customProgramCacheKey = () => `peel-${appearance.id}`;
@@ -157,8 +151,10 @@ export function PhotorealShell() {
       object={gltf.scene}
       onPointerDown={(event: { point: THREE.Vector3; stopPropagation: () => void }) => {
         event.stopPropagation();
-        setPeel([event.point.x, event.point.y, event.point.z], 0.14);
-        if (dissection < 0.1) setDissection(0.18);
+        const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
+        if (genital) select(genital);
+        setPeel([event.point.x, event.point.y, event.point.z], genital ? 0.1 : 0.14);
+        if (dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
       }}
     />
   );

@@ -3,9 +3,12 @@
 import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
+import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
+import { useIsPhone } from "@/lib/use-is-phone";
 import { AnatomyLayers } from "./AnatomyLayers";
 import { LoadBoundary } from "./LoadBoundary";
+import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
 
 function Lights() {
@@ -27,30 +30,41 @@ function Lights() {
 
 export function AtlasCanvas() {
   const brainFocus = useAtlas((s) => s.brainFocus);
+  const pelvisFocus = useAtlas((s) => s.pelvisFocus);
+  const phone = useIsPhone();
+  const camera = pelvisFocus
+    ? { position: [0.22, 0.92, 0.62] as [number, number, number], target: [0, 0.8, 0.12] as [number, number, number] }
+    : brainFocus
+      ? { position: [0.18, 1.58, 0.58] as [number, number, number], target: [0, 1.54, 0] as [number, number, number] }
+      : { position: [0, 0.95, phone ? 2.7 : 2.35] as [number, number, number], target: [0, 0.92, 0] as [number, number, number] };
 
   return (
     <Canvas
-      dpr={[1, 1.6]}
+      dpr={phone ? [1, 1.15] : [1, 1.6]}
       gl={{
-        antialias: true,
+        antialias: !phone,
         localClippingEnabled: true,
         powerPreference: "high-performance",
       }}
       camera={{
-        position: brainFocus ? [0.18, 1.58, 0.58] : [0, 0.95, 2.35],
-        fov: 35,
+        position: camera.position,
+        fov: phone ? 40 : 35,
         near: 0.05,
         far: 20,
       }}
+      style={{ touchAction: "none" }}
       onPointerMissed={() => useAtlas.getState().select(null)}
     >
       <color attach="background" args={["#0b0d12"]} />
       <fog attach="fog" args={["#0b0d12", 4.5, 9]} />
       <Lights />
-      <Environment preset="studio" />
+      {phone ? null : <Environment preset="studio" />}
       <Suspense fallback={null}>
         <LoadBoundary>
           <PhotorealShell />
+        </LoadBoundary>
+        <LoadBoundary>
+          <PhotorealGenitals />
         </LoadBoundary>
         <LoadBoundary>
           <AnatomyLayers />
@@ -58,9 +72,9 @@ export function AtlasCanvas() {
       </Suspense>
       <ContactShadows
         position={[0, 0.001, 0]}
-        opacity={0.45}
+        opacity={phone ? 0.28 : 0.45}
         scale={3}
-        blur={2.2}
+        blur={phone ? 1.4 : 2.2}
         far={1.8}
       />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.001, 0]}>
@@ -70,10 +84,16 @@ export function AtlasCanvas() {
       <OrbitControls
         makeDefault
         enablePan
-        minDistance={0.25}
+        enableDamping
+        dampingFactor={phone ? 0.12 : 0.08}
+        minDistance={0.18}
         maxDistance={5}
-        maxPolarAngle={Math.PI * 0.92}
-        target={brainFocus ? [0, 1.54, 0] : [0, 0.92, 0]}
+        maxPolarAngle={Math.PI * 0.94}
+        target={camera.target}
+        touches={{
+          ONE: TOUCH.ROTATE,
+          TWO: TOUCH.DOLLY_PAN,
+        }}
       />
     </Canvas>
   );

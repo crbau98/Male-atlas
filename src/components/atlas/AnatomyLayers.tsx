@@ -3,22 +3,33 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
-import catalog from "@/data/catalog.json";
 import { useAtlas } from "@/lib/atlas-store";
+import { catalog, partsById } from "@/lib/catalog";
+import { GENITAL_MESH_IDS, isPelvisPoint } from "@/lib/genital-parts";
 import { SYSTEM_META, systemVisibleAtDepth, type SystemId } from "@/lib/systems";
-import type { CatalogPart } from "@/lib/types";
-
-const partsById = new Map(
-  (catalog.parts as CatalogPart[]).map((part) => [part.id, part]),
-);
+import { useIsPhone } from "@/lib/use-is-phone";
 
 const BRAINISH = /brain|gyrus|cortex|hippocamp|thalam|cerebell|brainstem|ventricle of brain|cerebral|white matter|forebrain|midbrain|hindbrain|hypothalamus|epithalamus|pons|medulla/i;
 
 export function AnatomyLayers() {
   const photoreal = useAtlas((s) => s.photoreal);
-  const systems = (catalog.systems as string[]).filter(
-    (s) => !photoreal || s !== "integument",
-  );
+  const dissection = useAtlas((s) => s.dissection);
+  const peelCenter = useAtlas((s) => s.peelCenter);
+  const systemOn = useAtlas((s) => s.systemOn);
+  const phone = useIsPhone();
+  const systems = catalog.systems.filter((s) => {
+    if (systemOn[s] === false) return false;
+    if (photoreal && s === "integument") return false;
+    const meta = SYSTEM_META[s as SystemId] ?? SYSTEM_META.other;
+    const opened = dissection > 0.05 || Boolean(peelCenter);
+    if (photoreal && !opened) return false;
+    if (isPelvisPoint(peelCenter) && (s === "reproductive" || s === "urinary")) return true;
+    if (peelCenter && peelCenter[1] > 1.35 && (s === "nervous" || s === "skeletal")) return true;
+    if (photoreal || phone) {
+      return systemVisibleAtDepth(s, dissection) || dissection >= meta.depth - 0.18;
+    }
+    return true;
+  });
   return (
     <>
       {systems.map((system) => (
@@ -109,7 +120,13 @@ function SystemMeshes({ system }: { system: string }) {
       const hiddenPart = hidden.has(mesh.name);
       const isolatedAway = isolated && selectedId && mesh.name !== selectedId;
       const brainAway = brainFocus && system === "nervous" ? !isBrain : brainFocus && system !== "nervous";
-      mesh.visible = showSystem && !hiddenPart && !isolatedAway && !brainAway;
+      const genitalHandledElsewhere = GENITAL_MESH_IDS.has(mesh.name);
+      mesh.visible =
+        showSystem &&
+        !hiddenPart &&
+        !isolatedAway &&
+        !brainAway &&
+        !genitalHandledElsewhere;
 
       const mat = mesh.material as THREE.MeshPhysicalMaterial;
       const active = mesh.name === selectedId || mesh.name === hoveredId;
@@ -149,9 +166,4 @@ function SystemMeshes({ system }: { system: string }) {
       }}
     />
   );
-}
-
-for (const system of catalog.systems as string[]) {
-  if (system === "integument") continue;
-  useGLTF.preload(`/models/systems/${system}.glb`);
 }

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -15,7 +15,28 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Male Atlas",
   description:
-    "Interactive photoreal male body that peels into BodyParts3D anatomical meshes, including a parcellated brain.",
+    "Photoreal nude male body on the phone: tap to peel into named 3D anatomy, including brain and genitalia.",
+  applicationName: "Male Atlas",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Male Atlas",
+    statusBarStyle: "black-translucent",
+  },
+  formatDetection: { telephone: false },
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#07080c",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -17,7 +17,7 @@
         0.24679847061634064
       ]
     },
-    "partCount": 1258
+    "partCount": 1265
   },
   "systems": [
     "cardiovascular",
@@ -2853,6 +2853,26 @@
       "triangles": 624
     },
     {
+      "id": "FJ3132",
+      "fmaId": "FMA19618",
+      "name": "corpus cavernosum of penis",
+      "system": "reproductive",
+      "laterality": "median",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 1272
+    },
+    {
+      "id": "FJ3133",
+      "fmaId": "FMA19617",
+      "name": "corpus spongiosum of penis",
+      "system": "reproductive",
+      "laterality": "median",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 576
+    },
+    {
       "id": "FJ3080",
       "fmaId": "FMA14539",
       "name": "cystic duct",
@@ -5328,6 +5348,16 @@
       ],
       "file": "/models/systems/digestive.glb",
       "triangles": 1918
+    },
+    {
+      "id": "FJ3134",
+      "fmaId": "FMA18247",
+      "name": "glans penis",
+      "system": "reproductive",
+      "laterality": "median",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 1374
     },
     {
       "id": "FJ2656",
@@ -9245,6 +9275,16 @@
       ],
       "file": "/models/systems/skeletal.glb",
       "triangles": 4866
+    },
+    {
+      "id": "FJ3136",
+      "fmaId": "FMA18257",
+      "name": "left epididymis",
+      "system": "reproductive",
+      "laterality": "left",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 238
     },
     {
       "id": "FJ3466",
@@ -14934,6 +14974,16 @@
       ],
       "file": "/models/systems/cardiovascular.glb",
       "triangles": 14488
+    },
+    {
+      "id": "FJ3138",
+      "fmaId": "FMA7212",
+      "name": "left testis",
+      "system": "reproductive",
+      "laterality": "left",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 210
     },
     {
       "id": "FJ1675M",
@@ -21292,6 +21342,16 @@
       "triangles": 4866
     },
     {
+      "id": "FJ3141",
+      "fmaId": "FMA18256",
+      "name": "right epididymis",
+      "system": "reproductive",
+      "laterality": "right",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 76
+    },
+    {
       "id": "FJ3567",
       "fmaId": "FMA18806",
       "name": "right external iliac artery",
@@ -27341,6 +27401,16 @@
       ],
       "file": "/models/systems/cardiovascular.glb",
       "triangles": 13640
+    },
+    {
+      "id": "FJ3142",
+      "fmaId": "FMA7211",
+      "name": "right testis",
+      "system": "reproductive",
+      "laterality": "right",
+      "aliases": [],
+      "file": "/models/systems/reproductive.glb",
+      "triangles": 212
     },
     {
       "id": "FJ1675",

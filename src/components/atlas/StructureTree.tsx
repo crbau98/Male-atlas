@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import catalog from "@/data/catalog.json";
+import { catalog } from "@/lib/catalog";
 import { partMatches, useAtlas } from "@/lib/atlas-store";
 import { SYSTEM_META, SYSTEM_ORDER, type SystemId } from "@/lib/systems";
 import type { CatalogPart } from "@/lib/types";
 
-const parts = catalog.parts as CatalogPart[];
+const parts = catalog.parts;
 
 export function StructureTree() {
   const search = useAtlas((s) => s.search);
@@ -29,7 +29,7 @@ export function StructureTree() {
   }, [search]);
 
   return (
-    <aside className="pointer-events-auto flex h-[min(78vh,760px)] w-80 flex-col rounded-2xl border border-white/10 bg-[#101218]/88 backdrop-blur-md">
+    <aside className="pointer-events-auto flex h-full min-h-0 w-full flex-col rounded-2xl border border-white/10 bg-[#101218]/88 backdrop-blur-md">
       <div className="border-b border-white/10 p-4">
         <p className="text-xs tracking-[0.22em] text-[#c4a46c] uppercase">
           Structures

@@ -18,6 +18,7 @@ import { StructureTree } from "./StructureTree";
 import { AtlasLoader } from "./AtlasLoader";
 import { CoachHint } from "./CoachHint";
 import { MobileDock } from "./MobileDock";
+import { applyViewFromUrl } from "@/lib/view-link";
 
 const LOOKS: AppearanceId[] = ["julian", "malik", "kenji", "diego"];
 const LOOK_KEY = "male-atlas-look";
@@ -65,6 +66,10 @@ export function AtlasApp() {
   useEffect(() => {
     if (appearanceId) window.localStorage.setItem(LOOK_KEY, appearanceId);
   }, [appearanceId]);
+
+  useEffect(() => {
+    applyViewFromUrl();
+  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

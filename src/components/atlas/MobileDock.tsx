@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useAtlas } from "@/lib/atlas-store";
+import { haptic } from "@/lib/haptics";
+import { captureView } from "@/lib/screenshot";
+import { shareCurrentView } from "@/lib/view-link";
 
 function chip(on: boolean) {
   return `min-h-11 flex-1 rounded-full px-3 text-xs ${
@@ -33,12 +36,42 @@ export function MobileDock() {
   const explode = useAtlas((s) => s.explode);
   const setExplode = useAtlas((s) => s.setExplode);
   const [more, setMore] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const flash = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 1800);
+  };
+
+  const tap = (fn: () => void) => () => {
+    haptic(8);
+    fn();
+  };
+
+  const onShare = async () => {
+    haptic(8);
+    const result = await shareCurrentView();
+    if (result === "shared") return;
+    if (result === "copied") flash("Link copied");
+    else flash("Couldn't share");
+  };
+
+  const onSnapshot = async () => {
+    haptic(8);
+    const result = await captureView();
+    if (result === "shared") return;
+    if (result === "downloaded") flash("Image saved");
+    else flash("Couldn't capture");
+  };
 
   const cutLabel =
     clipMode === "off" ? "Cut" : clipMode === "quarter" ? "¼" : clipMode === "hemi" ? "Hemi" : clipMode.slice(0, 3);
 
   return (
     <div className="pointer-events-auto space-y-2 rounded-2xl border border-white/10 bg-[#101218]/92 px-3 py-2 backdrop-blur-md">
+      {toast ? (
+        <p className="rounded-full bg-[#c4a46c]/15 px-3 py-1 text-center text-[11px] text-[#c4a46c]">{toast}</p>
+      ) : null}
       <label className="flex min-w-0 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">
         Peel
         <input
@@ -56,39 +89,45 @@ export function MobileDock() {
         />
       </label>
       <div className="flex gap-2">
-        <button type="button" onClick={() => (demoIndex === null ? startDemo() : stopDemo())} className={chip(demoIndex !== null)}>
+        <button type="button" onClick={tap(() => (demoIndex === null ? startDemo() : stopDemo()))} className={chip(demoIndex !== null)}>
           Demo
         </button>
-        <button type="button" onClick={cycleClip} className={chip(clipMode !== "off")}>
+        <button type="button" onClick={tap(cycleClip)} className={chip(clipMode !== "off")}>
           {cutLabel}
         </button>
-        <button type="button" onClick={undoView} className={chip(false)}>
+        <button type="button" onClick={tap(undoView)} className={chip(false)}>
           Undo
         </button>
-        <button type="button" onClick={() => setMore((v) => !v)} className={chip(more)}>
+        <button type="button" onClick={tap(() => setMore((v) => !v))} className={chip(more)}>
           More
         </button>
       </div>
       {peelCenter ? (
-        <button type="button" onClick={closePeel} className={`${chip(true)} w-full`}>
+        <button type="button" onClick={tap(closePeel)} className={`${chip(true)} w-full`}>
           Close peel
         </button>
       ) : null}
       {more ? (
         <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
+          <button type="button" onClick={tap(() => setPhotoreal(!photoreal))} className={chip(photoreal)}>
             Nude
           </button>
-          <button type="button" onClick={toggleXray} className={chip(xrayOn)}>
+          <button type="button" onClick={tap(toggleXray)} className={chip(xrayOn)}>
             X-ray
           </button>
-          <button type="button" onClick={togglePathway} className={chip(pathwayOn)}>
+          <button type="button" onClick={tap(togglePathway)} className={chip(pathwayOn)}>
             Path
           </button>
-          <button type="button" onClick={toggleLabels} className={chip(showLabels)}>
+          <button type="button" onClick={tap(toggleLabels)} className={chip(showLabels)}>
             Labels
           </button>
-          <button type="button" onClick={resetView} className={chip(false)}>
+          <button type="button" onClick={onSnapshot} className={chip(false)}>
+            Snapshot
+          </button>
+          <button type="button" onClick={onShare} className={chip(false)}>
+            Share
+          </button>
+          <button type="button" onClick={tap(resetView)} className={chip(false)}>
             Reset
           </button>
           <label className="flex min-w-[7rem] flex-1 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">

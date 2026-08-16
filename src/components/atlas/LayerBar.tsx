@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import { useAtlas } from "@/lib/atlas-store";
 import { REGIONS, type RegionId } from "@/lib/regions";
+import { captureView } from "@/lib/screenshot";
+import { shareCurrentView } from "@/lib/view-link";
 import { AppearanceStrip } from "./AppearanceSelect";
 
 function Slider({
@@ -67,6 +70,26 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const demoIndex = useAtlas((s) => s.demoIndex);
   const startDemo = useAtlas((s) => s.startDemo);
   const stopDemo = useAtlas((s) => s.stopDemo);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const flash = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 1800);
+  };
+
+  const onShare = async () => {
+    const result = await shareCurrentView();
+    if (result === "shared") return;
+    if (result === "copied") flash("Link copied");
+    else flash("Couldn't share");
+  };
+
+  const onSnapshot = async () => {
+    const result = await captureView();
+    if (result === "shared") return;
+    if (result === "downloaded") flash("Image saved");
+    else flash("Couldn't capture");
+  };
 
   const chip = (on: boolean) =>
     `min-h-11 rounded-full px-3 py-1.5 text-xs ${
@@ -75,6 +98,11 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className="pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
+      {toast ? (
+        <p className="w-full rounded-full bg-[#c4a46c]/15 px-3 py-1 text-center text-[11px] text-[#c4a46c]">
+          {toast}
+        </p>
+      ) : null}
       {compact ? null : <AppearanceStrip />}
       <Slider
         label="Dissection"
@@ -161,6 +189,12 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
         </button>
         <button type="button" onClick={() => setClipMode(clipMode === "hemi" ? "off" : "hemi")} className={chip(clipMode === "hemi")}>
           Hemi
+        </button>
+        <button type="button" onClick={onSnapshot} className={chip(false)}>
+          Snapshot
+        </button>
+        <button type="button" onClick={onShare} className={chip(false)}>
+          Share view
         </button>
       </div>
     </div>

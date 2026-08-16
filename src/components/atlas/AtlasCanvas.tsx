@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Suspense, useCallback, useRef, useState } from "react";
+import { Canvas } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, PerformanceMonitor } from "@react-three/drei";
 import * as THREE from "three";
 import { TOUCH } from "three";
@@ -54,17 +54,6 @@ function Lights({ shadows, shadowSize }: { shadows: boolean; shadowSize: number 
       />
     </>
   );
-}
-
-function RendererSettings() {
-  const gl = useThree((s) => s.gl);
-  const lightingPreset = useAtlas((s) => s.lightingPreset);
-
-  useEffect(() => {
-    gl.toneMappingExposure = LIGHTING_PRESETS[lightingPreset].exposure;
-  }, [gl, lightingPreset]);
-
-  return null;
 }
 
 function ContextLossOverlay({ onReload }: { onReload: () => void }) {
@@ -169,7 +158,7 @@ export function AtlasCanvas() {
   return (
     <div className="relative h-full w-full">
       <Canvas
-        shadows={shadows ? THREE.PCFShadowMap : false}
+        shadows={shadows}
         dpr={dpr}
         gl={{
           antialias: true,
@@ -195,7 +184,6 @@ export function AtlasCanvas() {
           onDecline={() => setAdaptiveDpr(1)}
           onIncline={() => setAdaptiveDpr(phone ? 1.25 : 1.5)}
         />
-        <RendererSettings />
         <color attach="background" args={[sceneBackground]} />
         <Lights shadows={shadows} shadowSize={shadowSize} />
         <LocalStudio />

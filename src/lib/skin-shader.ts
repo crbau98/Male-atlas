@@ -134,10 +134,8 @@ export function injectPhotorealSkin(
        float backLuma = dot(backC, vec3(0.299, 0.587, 0.114));
        float frontSat = max(max(frontC.r, frontC.g), frontC.b) - min(min(frontC.r, frontC.g), frontC.b);
        float backSat = max(max(backC.r, backC.g), backC.b) - min(min(backC.r, backC.g), backC.b);
-       float frontLive = step(0.04, frontLuma) * step(0.045, frontSat) * (1.0 - step(0.84, frontLuma));
-       float backLive = step(0.04, backLuma) * step(0.045, backSat) * (1.0 - step(0.84, backLuma));
-       frontLive *= 1.0 - step(frontLuma, 0.36) * step(frontC.r + 0.03, frontC.b);
-       backLive *= 1.0 - step(backLuma, 0.36) * step(backC.r + 0.03, backC.b);
+       float frontLive = step(0.05, frontLuma);
+       float backLive = step(0.05, backLuma);
        float wrap = smoothstep(-0.42, 0.12, nrm.z);
        float frontAmt = wrap * frontLive;
        float backAmt = (1.0 - wrap) * backLive;
@@ -152,7 +150,7 @@ export function injectPhotorealSkin(
        vec3 facePhoto = texture2D(uFaceMap, faceUV).rgb;
        float faceLuma = dot(facePhoto, vec3(0.299, 0.587, 0.114));
        float faceSat = max(max(facePhoto.r, facePhoto.g), facePhoto.b) - min(min(facePhoto.r, facePhoto.g), facePhoto.b);
-       float faceLive = step(0.05, faceLuma) * step(0.04, faceSat) * (1.0 - step(0.9, faceLuma));
+       float faceLive = step(0.05, faceLuma) * (1.0 - step(0.86, faceLuma) * (1.0 - step(0.05, faceSat)));
        skin = mix(skin, facePhoto, faceMask * faceLive);
        float hairCap = atlasSoft(w.y, 1.58, 1.62) * (1.0 - atlasSoft(w.z, 0.02, 0.06));
        skin = mix(skin, uHairColor, hairCap * (1.0 - faceMask * faceLive) * 0.92);

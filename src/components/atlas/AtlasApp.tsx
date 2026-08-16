@@ -4,12 +4,17 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import { catalog } from "@/lib/catalog";
 import { useAtlas } from "@/lib/atlas-store";
+import type { AppearanceId } from "@/lib/types";
 import { useIsPhone } from "@/lib/use-is-phone";
 import { AppearanceSelect, AppearanceStrip } from "./AppearanceSelect";
 import { Inspector } from "./Inspector";
 import { InstallHint } from "./InstallHint";
 import { LayerBar } from "./LayerBar";
+import { SelectionHud } from "./SelectionHud";
 import { StructureTree } from "./StructureTree";
+
+const LOOKS: AppearanceId[] = ["julian", "malik", "kenji", "diego"];
+const LOOK_KEY = "male-atlas-look";
 
 const AtlasCanvas = dynamic(
   () => import("./AtlasCanvas").then((m) => m.AtlasCanvas),
@@ -22,9 +27,22 @@ export function AtlasApp() {
   const resetView = useAtlas((s) => s.resetView);
   const toggleIsolate = useAtlas((s) => s.toggleIsolate);
   const hideSelected = useAtlas((s) => s.hideSelected);
+  const nextTour = useAtlas((s) => s.nextTour);
+  const stopTour = useAtlas((s) => s.stopTour);
   const mobileTab = useAtlas((s) => s.mobileTab);
   const setMobileTab = useAtlas((s) => s.setMobileTab);
   const phone = useIsPhone();
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(LOOK_KEY);
+    if (saved && LOOKS.includes(saved as AppearanceId)) {
+      useAtlas.setState({ appearanceId: saved as AppearanceId });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (appearanceId) window.localStorage.setItem(LOOK_KEY, appearanceId);
+  }, [appearanceId]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -32,10 +50,19 @@ export function AtlasApp() {
       if (event.key === "r" || event.key === "R") resetView();
       if (event.key === "x" || event.key === "X") toggleIsolate();
       if (event.key === "h" || event.key === "H") hideSelected();
+      if (event.key === " " || event.key === "ArrowRight") {
+        event.preventDefault();
+        nextTour();
+      }
+      if (event.key === "t" || event.key === "T") {
+        const touring = useAtlas.getState().tourIndex !== null;
+        if (touring) stopTour();
+        else useAtlas.getState().startTour();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [hideSelected, resetView, setAppearance, toggleIsolate]);
+  }, [hideSelected, nextTour, resetView, setAppearance, stopTour, toggleIsolate]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -61,6 +88,9 @@ export function AtlasApp() {
             >
               Looks
             </button>
+          </div>
+          <div className="pointer-events-none absolute inset-x-3 top-16">
+            <SelectionHud />
           </div>
           {catalog.meta.partCount === 0 ? (
             <p className="absolute inset-x-4 top-20 rounded-full bg-black/70 px-3 py-2 text-center text-[11px] text-[#d9c59a]">
@@ -118,6 +148,7 @@ export function AtlasApp() {
             >
               Appearances
             </button>
+            <SelectionHud />
             <Inspector />
           </div>
         </div>

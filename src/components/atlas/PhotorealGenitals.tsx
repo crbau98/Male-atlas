@@ -14,6 +14,7 @@ import {
   isPelvisPoint,
 } from "@/lib/genital-parts";
 import { injectPeelShader } from "@/lib/peel-shader";
+import { tapPart } from "@/lib/tap-part";
 
 function inflateGeometry(geometry: THREE.BufferGeometry, amount: number) {
   const geo = geometry.clone();
@@ -70,7 +71,6 @@ export function PhotorealGenitals() {
   const peelCenter = useAtlas((s) => s.peelCenter);
   const selectedId = useAtlas((s) => s.selectedId);
   const hoveredId = useAtlas((s) => s.hoveredId);
-  const select = useAtlas((s) => s.select);
   const hover = useAtlas((s) => s.hover);
   const appearance = appearanceById(appearanceId ?? "julian");
   const uniforms = usePeelUniforms();
@@ -116,7 +116,7 @@ export function PhotorealGenitals() {
       onPointerOut={() => hover(null)}
       onClick={(event) => {
         event.stopPropagation();
-        select(event.object.name);
+        tapPart(event.object.name, [event.point.x, event.point.y, event.point.z]);
       }}
     >
       {[...geometries.entries()].map(([id, geometry]) => {

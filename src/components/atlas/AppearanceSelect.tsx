@@ -20,9 +20,17 @@ export function AppearanceSelect() {
           <p className="max-w-2xl text-sm leading-6 text-[#b7b3aa] md:text-base">
             Choose a living nude look. Tap the body or raise dissection to peel
             skin into BodyParts3D meshes — skeleton, muscle, viscera, vessels,
-            nerves, genitalia, and a parcellated brain. On a phone, open this
-            page then Share → Add to Home Screen for a full-screen app.
+            nerves, genitalia, and a parcellated brain. On a phone this opens
+            straight into the 3D atlas; Share → Add to Home Screen for a
+            full-screen app.
           </p>
+          <button
+            type="button"
+            onClick={() => setAppearance("julian")}
+            className="mt-2 min-h-12 w-fit rounded-full bg-[#c4a46c] px-5 text-sm tracking-wide text-[#16140f] uppercase"
+          >
+            Open the atlas
+          </button>
         </header>
 
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">

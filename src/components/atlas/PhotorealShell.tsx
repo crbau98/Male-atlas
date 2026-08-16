@@ -8,6 +8,7 @@ import { appearanceById } from "@/lib/appearances";
 import { useAtlas } from "@/lib/atlas-store";
 import { pickGenitalFromPoint } from "@/lib/genital-parts";
 import { injectPeelShader } from "@/lib/peel-shader";
+import { tapPart } from "@/lib/tap-part";
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -17,7 +18,16 @@ export function PhotorealShell() {
   const photoreal = useAtlas((s) => s.photoreal);
   const setPeel = useAtlas((s) => s.setPeel);
   const setDissection = useAtlas((s) => s.setDissection);
-  const select = useAtlas((s) => s.select);
+  const setPeelRadius = useAtlas((s) => s.setPeelRadius);
+  const lookAt = useAtlas((s) => s.lookAt);
+  const hold = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stopHold = () => {
+    if (hold.current) {
+      clearInterval(hold.current);
+      hold.current = null;
+    }
+  };
 
   const appearance = appearanceById(appearanceId ?? "julian");
   const gltf = useGLTF("/models/systems/integument.glb");
@@ -149,13 +159,26 @@ export function PhotorealShell() {
   return (
     <primitive
       object={gltf.scene}
-      onPointerDown={(event: { point: THREE.Vector3; stopPropagation: () => void }) => {
+      onPointerDown={(event: {
+        point: THREE.Vector3;
+        stopPropagation: () => void;
+      }) => {
         event.stopPropagation();
         const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
-        if (genital) select(genital);
-        setPeel([event.point.x, event.point.y, event.point.z], genital ? 0.1 : 0.14);
+        const point: [number, number, number] = [event.point.x, event.point.y, event.point.z];
+        if (genital) tapPart(genital, point);
+        else lookAt(point, [point[0] + 0.22, point[1] + 0.08, point[2] + 0.42]);
+        setPeel(point, genital ? 0.1 : 0.14);
         if (dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
+        stopHold();
+        hold.current = setInterval(() => {
+          const radius = useAtlas.getState().peelRadius;
+          setPeelRadius(Math.min(0.32, radius + 0.012));
+        }, 70);
       }}
+      onPointerUp={stopHold}
+      onPointerLeave={stopHold}
+      onPointerCancel={stopHold}
     />
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtlas } from "@/lib/atlas-store";
+import { REGIONS, type RegionId } from "@/lib/regions";
 import { AppearanceStrip } from "./AppearanceSelect";
 
 function Slider({
@@ -38,15 +39,16 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
   const clipY = useAtlas((s) => s.clipY);
   const clipEnabled = useAtlas((s) => s.clipEnabled);
   const photoreal = useAtlas((s) => s.photoreal);
-  const brainFocus = useAtlas((s) => s.brainFocus);
-  const pelvisFocus = useAtlas((s) => s.pelvisFocus);
+  const region = useAtlas((s) => s.region);
+  const tourIndex = useAtlas((s) => s.tourIndex);
   const setDissection = useAtlas((s) => s.setDissection);
   const setExplode = useAtlas((s) => s.setExplode);
   const setClipY = useAtlas((s) => s.setClipY);
   const setClipEnabled = useAtlas((s) => s.setClipEnabled);
   const setPhotoreal = useAtlas((s) => s.setPhotoreal);
-  const setBrainFocus = useAtlas((s) => s.setBrainFocus);
-  const setPelvisFocus = useAtlas((s) => s.setPelvisFocus);
+  const goRegion = useAtlas((s) => s.goRegion);
+  const startTour = useAtlas((s) => s.startTour);
+  const stopTour = useAtlas((s) => s.stopTour);
   const resetView = useAtlas((s) => s.resetView);
   const setPeel = useAtlas((s) => s.setPeel);
 
@@ -56,7 +58,7 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
     }`;
 
   return (
-    <div className="pointer-events-auto flex w-full flex-wrap items-end gap-3 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
+    <div className="pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
       {compact ? null : <AppearanceStrip />}
       <Slider
         label="Dissection"
@@ -66,7 +68,7 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
           if (v < 0.02) setPeel(null);
         }}
       />
-      {compact ? null : <Slider label="Explode" value={explode} onChange={setExplode} />}
+      <Slider label="Explode" value={explode} onChange={setExplode} />
       {compact ? null : (
         <Slider
           label="Clip height"
@@ -79,23 +81,36 @@ export function LayerBar({ compact = false }: { compact?: boolean }) {
           }}
         />
       )}
-      <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
-        Nude
-      </button>
-      <button type="button" onClick={() => setPelvisFocus(!pelvisFocus)} className={chip(pelvisFocus)}>
-        Pelvis
-      </button>
-      <button type="button" onClick={() => setBrainFocus(!brainFocus)} className={chip(brainFocus)}>
-        Brain
-      </button>
-      {compact ? null : (
-        <button type="button" onClick={() => setClipEnabled(!clipEnabled)} className={chip(clipEnabled)}>
-          Clip
+      <div className="flex w-full flex-wrap gap-2">
+        {(Object.keys(REGIONS) as RegionId[]).map((id) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => goRegion(id)}
+            className={chip(region === id)}
+          >
+            {REGIONS[id].label}
+          </button>
+        ))}
+        <button
+          type="button"
+          onClick={() => (tourIndex === null ? startTour() : stopTour())}
+          className={chip(tourIndex !== null)}
+        >
+          Tour
         </button>
-      )}
-      <button type="button" onClick={resetView} className={chip(false)}>
-        Reset
-      </button>
+        <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
+          Nude
+        </button>
+        {compact ? null : (
+          <button type="button" onClick={() => setClipEnabled(!clipEnabled)} className={chip(clipEnabled)}>
+            Clip
+          </button>
+        )}
+        <button type="button" onClick={resetView} className={chip(false)}>
+          Reset
+        </button>
+      </div>
     </div>
   );
 }

@@ -5,8 +5,11 @@ import { Canvas } from "@react-three/fiber";
 import { ContactShadows, Environment, OrbitControls } from "@react-three/drei";
 import { TOUCH } from "three";
 import { useAtlas } from "@/lib/atlas-store";
+import { REGIONS } from "@/lib/regions";
 import { useIsPhone } from "@/lib/use-is-phone";
 import { AnatomyLayers } from "./AnatomyLayers";
+import { CameraRig } from "./CameraRig";
+import { Hotspots } from "./Hotspots";
 import { LoadBoundary } from "./LoadBoundary";
 import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
@@ -29,14 +32,8 @@ function Lights() {
 }
 
 export function AtlasCanvas() {
-  const brainFocus = useAtlas((s) => s.brainFocus);
-  const pelvisFocus = useAtlas((s) => s.pelvisFocus);
   const phone = useIsPhone();
-  const camera = pelvisFocus
-    ? { position: [0.22, 0.92, 0.62] as [number, number, number], target: [0, 0.8, 0.12] as [number, number, number] }
-    : brainFocus
-      ? { position: [0.18, 1.58, 0.58] as [number, number, number], target: [0, 1.54, 0] as [number, number, number] }
-      : { position: [0, 0.95, phone ? 2.7 : 2.35] as [number, number, number], target: [0, 0.92, 0] as [number, number, number] };
+  const start = REGIONS.full;
 
   return (
     <Canvas
@@ -47,7 +44,7 @@ export function AtlasCanvas() {
         powerPreference: "high-performance",
       }}
       camera={{
-        position: camera.position,
+        position: start.eye,
         fov: phone ? 40 : 35,
         near: 0.05,
         far: 20,
@@ -69,6 +66,7 @@ export function AtlasCanvas() {
         <LoadBoundary>
           <AnatomyLayers />
         </LoadBoundary>
+        <Hotspots />
       </Suspense>
       <ContactShadows
         position={[0, 0.001, 0]}
@@ -81,6 +79,7 @@ export function AtlasCanvas() {
         <circleGeometry args={[3.2, 64]} />
         <meshStandardMaterial color="#12141b" roughness={0.9} />
       </mesh>
+      <CameraRig />
       <OrbitControls
         makeDefault
         enablePan
@@ -89,7 +88,7 @@ export function AtlasCanvas() {
         minDistance={0.18}
         maxDistance={5}
         maxPolarAngle={Math.PI * 0.94}
-        target={camera.target}
+        target={start.target}
         touches={{
           ONE: TOUCH.ROTATE,
           TWO: TOUCH.DOLLY_PAN,

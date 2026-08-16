@@ -1,15 +1,15 @@
 # Male Atlas
 
-Interactive 3D atlas of an adult male: pick a photoreal nude appearance, then peel into named BodyParts3D anatomy (muscles, viscera, vessels, nerves, skeleton, parcellated brain, and male genitalia).
+Interactive 3D atlas of an adult male: a photoreal nude surface that peels into named BodyParts3D anatomy (muscles, viscera, vessels, nerves, skeleton, parcellated brain, and male genitalia).
 
 ## Phone app
 
-Open the site on a phone (Safari or Chrome). It is a standalone web app:
+On a phone the atlas **opens straight into the 3D view** (Julian, or your last look). Add it to the home screen:
 
 - **iPhone:** Share → Add to Home Screen
 - **Android:** Chrome menu → Install app, or the in-app install chip
 
-The 3D view fills the screen. Drag to orbit, pinch to zoom, two-finger drag to pan. Bottom tabs: **View** (dissection / Nude / Pelvis / Brain), **Parts** (search), **Info** (inspector). Systems load as you dissect so the first open stays light.
+Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Gold markers jump to Brain / Chest / Belly / Pelvis. **Tour** walks the layers. Bottom tabs: View, Parts, Info.
 
 ## Run
 
@@ -20,7 +20,7 @@ python3 scripts/ingest_genitals.py      # optional: merge IS-A penis/testis mesh
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Choose Julian, Malik, Kenji, or Diego. Click the body to open an anatomical window, or drag **Dissection**. **Pelvis** frames the perineum; **Nude** toggles the photoreal surface.
+Open [http://localhost:3000](http://localhost:3000). Tap **Open the atlas** or pick Julian, Malik, Kenji, or Diego.
 
 ## Nude genitalia
 
@@ -44,4 +44,4 @@ This is an educational atlas, not a diagnostic device. BodyParts3D authors note 
 ## Keys
 
 - Click photoreal surface: peel window (genital region also selects the named part)
-- `R` reset, `X` isolate, `H` hide, `Esc` appearances
+- `T` tour, `Space` next step, `R` reset, `X` isolate, `H` hide, `Esc` appearances

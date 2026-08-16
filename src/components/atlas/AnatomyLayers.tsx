@@ -7,6 +7,7 @@ import { useAtlas } from "@/lib/atlas-store";
 import { catalog, partsById } from "@/lib/catalog";
 import { GENITAL_MESH_IDS, isPelvisPoint } from "@/lib/genital-parts";
 import { SYSTEM_META, systemVisibleAtDepth, type SystemId } from "@/lib/systems";
+import { tapPart } from "@/lib/tap-part";
 import { useIsPhone } from "@/lib/use-is-phone";
 
 const BRAINISH = /brain|gyrus|cortex|hippocamp|thalam|cerebell|brainstem|ventricle of brain|cerebral|white matter|forebrain|midbrain|hindbrain|hypothalamus|epithalamus|pons|medulla/i;
@@ -53,7 +54,6 @@ function SystemMeshes({ system }: { system: string }) {
   const peelCenter = useAtlas((s) => s.peelCenter);
   const clipEnabled = useAtlas((s) => s.clipEnabled);
   const clipY = useAtlas((s) => s.clipY);
-  const select = useAtlas((s) => s.select);
   const hover = useAtlas((s) => s.hover);
 
   const clipPlane = useMemo(
@@ -160,9 +160,16 @@ function SystemMeshes({ system }: { system: string }) {
         hover(event.object.name);
       }}
       onPointerOut={() => hover(null)}
-      onClick={(event: { object: THREE.Object3D; stopPropagation: () => void }) => {
+      onClick={(event: {
+        object: THREE.Object3D;
+        point?: THREE.Vector3;
+        stopPropagation: () => void;
+      }) => {
         event.stopPropagation();
-        select(event.object.name);
+        const point = event.point
+          ? ([event.point.x, event.point.y, event.point.z] as [number, number, number])
+          : ([0, 1, 0] as [number, number, number]);
+        tapPart(event.object.name, point);
       }}
     />
   );

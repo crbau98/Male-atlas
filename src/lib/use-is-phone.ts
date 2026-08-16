@@ -6,7 +6,7 @@ export function useIsPhone() {
   const [phone, setPhone] = useState(false);
 
   useEffect(() => {
-    const media = window.matchMedia("(max-width: 768px)");
+    const media = window.matchMedia("(max-width: 768px), (pointer: coarse)");
     const sync = () => setPhone(media.matches);
     sync();
     media.addEventListener("change", sync);

@@ -1,0 +1,109 @@
+"use client";
+
+import { useAtlas } from "@/lib/atlas-store";
+import { AppearanceStrip } from "./AppearanceSelect";
+
+function Slider({
+  label,
+  value,
+  onChange,
+  min = 0,
+  max = 1,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+}) {
+  return (
+    <label className="flex min-w-[160px] flex-1 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">
+      {label}
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={0.01}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="accent-[#c4a46c]"
+      />
+    </label>
+  );
+}
+
+export function LayerBar() {
+  const dissection = useAtlas((s) => s.dissection);
+  const explode = useAtlas((s) => s.explode);
+  const clipY = useAtlas((s) => s.clipY);
+  const clipEnabled = useAtlas((s) => s.clipEnabled);
+  const photoreal = useAtlas((s) => s.photoreal);
+  const brainFocus = useAtlas((s) => s.brainFocus);
+  const setDissection = useAtlas((s) => s.setDissection);
+  const setExplode = useAtlas((s) => s.setExplode);
+  const setClipY = useAtlas((s) => s.setClipY);
+  const setClipEnabled = useAtlas((s) => s.setClipEnabled);
+  const setPhotoreal = useAtlas((s) => s.setPhotoreal);
+  const setBrainFocus = useAtlas((s) => s.setBrainFocus);
+  const resetView = useAtlas((s) => s.resetView);
+  const setPeel = useAtlas((s) => s.setPeel);
+
+  return (
+    <div className="pointer-events-auto flex flex-wrap items-end gap-4 rounded-2xl border border-white/10 bg-[#101218]/88 px-5 py-4 backdrop-blur-md">
+      <AppearanceStrip />
+      <Slider
+        label="Dissection"
+        value={dissection}
+        onChange={(v) => {
+          setDissection(v);
+          if (v < 0.02) setPeel(null);
+        }}
+      />
+      <Slider label="Explode" value={explode} onChange={setExplode} />
+      <Slider
+        label="Clip height"
+        value={clipY}
+        min={0}
+        max={1.8}
+        onChange={(v) => {
+          setClipY(v);
+          setClipEnabled(true);
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => setPhotoreal(!photoreal)}
+        className={`rounded-full px-3 py-1.5 text-xs ${
+          photoreal ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
+        }`}
+      >
+        Photoreal
+      </button>
+      <button
+        type="button"
+        onClick={() => setBrainFocus(!brainFocus)}
+        className={`rounded-full px-3 py-1.5 text-xs ${
+          brainFocus ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
+        }`}
+      >
+        Brain
+      </button>
+      <button
+        type="button"
+        onClick={() => setClipEnabled(!clipEnabled)}
+        className={`rounded-full px-3 py-1.5 text-xs ${
+          clipEnabled ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
+        }`}
+      >
+        Clip
+      </button>
+      <button
+        type="button"
+        onClick={resetView}
+        className="rounded-full border border-white/15 px-3 py-1.5 text-xs text-[#efece6]"
+      >
+        Reset
+      </button>
+    </div>
+  );
+}

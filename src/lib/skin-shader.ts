@@ -182,5 +182,12 @@ export function injectPhotorealSkin(
        col = mix(col, flush, thin * 0.42 + sss * (0.1 + 0.12 * (1.0 - uMelanin)));
        col = mix(col, uSheenColor, 0.035 + uClose * 0.045 + tzone * 0.08 + lips * 0.06);
        diffuseColor.rgb = col;`,
+    )
+    .replace(
+      "#include <roughnessmap_fragment>",
+      `#include <roughnessmap_fragment>
+       float atlasPoreRough = atlasFbm(vAtlasWorld * 340.0) - 0.5;
+       float atlasSkinRough = atlasFbm(vAtlasWorld * 18.0) - 0.5;
+       roughnessFactor = clamp(roughnessFactor + atlasPoreRough * 0.05 + atlasSkinRough * 0.035, 0.05, 0.95);`,
     );
 }

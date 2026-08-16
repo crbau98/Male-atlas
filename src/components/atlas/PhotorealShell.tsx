@@ -12,6 +12,7 @@ import { injectPhotorealSkin } from "@/lib/skin-shader";
 import { closeupAmount } from "@/lib/skin-maps";
 import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
+import { haptic } from "@/lib/haptics";
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
@@ -54,7 +55,10 @@ export function PhotorealShell() {
 
   const startPeel = (point: [number, number, number], genital: string | null) => {
     if (genital) tapPart(genital, point);
-    else lookAt(point);
+    else {
+      haptic(12);
+      lookAt(point);
+    }
     setPeel(point, genital ? 0.1 : 0.14);
     if (useAtlas.getState().dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
   };
@@ -104,7 +108,7 @@ export function PhotorealShell() {
         uAttenuation: uniforms.current.uAttenuation,
       });
     };
-    mat.customProgramCacheKey = () => `skin-world-v4-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-world-v5-${appearance.id}`;
     return mat;
   }, [appearance]);
 

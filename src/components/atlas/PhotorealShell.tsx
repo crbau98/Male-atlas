@@ -215,7 +215,7 @@ export function PhotorealShell() {
         uBackMap: uniforms.current.uBackMap,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v5-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v6-${appearance.id}`;
     return mat;
   }, [albedo, appearance]);
 

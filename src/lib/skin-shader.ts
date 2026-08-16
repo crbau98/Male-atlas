@@ -138,21 +138,24 @@ export function injectPhotorealSkin(
        float backLive = step(0.04, backLuma) * step(0.045, backSat) * (1.0 - step(0.84, backLuma));
        frontLive *= 1.0 - step(frontLuma, 0.36) * step(frontC.r + 0.03, frontC.b);
        backLive *= 1.0 - step(backLuma, 0.36) * step(backC.r + 0.03, backC.b);
-       float wrap = smoothstep(-0.22, 0.18, nrm.z);
+       float wrap = smoothstep(-0.42, 0.12, nrm.z);
        float frontAmt = wrap * frontLive;
        float backAmt = (1.0 - wrap) * backLive;
-       skin = mix(skin, backC, backAmt);
-       skin = mix(skin, frontC, frontAmt);
-       vec2 faceUV = vec2(0.5 - w.x * 5.15, clamp((w.y - 1.392) / 0.338, 0.0, 1.0));
-       float faceMask = atlasSoft(w.y, 1.468, 1.498)
-         * (1.0 - atlasSoft(w.y, 1.718, 1.742))
-         * atlasSoft(w.z, 0.018, 0.05)
-         * (1.0 - atlasSoft(ax, 0.088, 0.118));
+       float belowNeck = 1.0 - atlasSoft(w.y, 1.448, 1.505);
+       skin = mix(skin, backC, backAmt * belowNeck);
+       skin = mix(skin, frontC, frontAmt * belowNeck);
+       vec2 faceUV = vec2(clamp(0.5 - w.x * 4.85, 0.0, 1.0), clamp((w.y - 1.405) / 0.325, 0.0, 1.0));
+       float faceMask = atlasSoft(w.y, 1.455, 1.492)
+         * (1.0 - atlasSoft(w.y, 1.725, 1.748))
+         * atlasSoft(w.z, -0.01, 0.03)
+         * (1.0 - atlasSoft(ax, 0.095, 0.125));
        vec3 facePhoto = texture2D(uFaceMap, faceUV).rgb;
        float faceLuma = dot(facePhoto, vec3(0.299, 0.587, 0.114));
        float faceSat = max(max(facePhoto.r, facePhoto.g), facePhoto.b) - min(min(facePhoto.r, facePhoto.g), facePhoto.b);
        float faceLive = step(0.05, faceLuma) * step(0.04, faceSat) * (1.0 - step(0.9, faceLuma));
        skin = mix(skin, facePhoto, faceMask * faceLive);
+       float hairCap = atlasSoft(w.y, 1.58, 1.62) * (1.0 - atlasSoft(w.z, 0.02, 0.06));
+       skin = mix(skin, uHairColor, hairCap * (1.0 - faceMask * faceLive) * 0.92);
        vec3 photoTint = vec3(0.82, 0.64, 0.54);
        float tintMix = clamp(abs(uMelanin - 0.16) * 1.15, 0.0, 0.7);
        skin = mix(skin, skin * (uSkinTint / max(photoTint, vec3(0.08))), tintMix);
@@ -165,7 +168,7 @@ export function injectPhotorealSkin(
          * atlasSoft(w.z, 0.02, 0.09);
        float strand = 0.55 + 0.45 * smoothstep(0.25, 0.9, abs(sin(w.x * 68.0 + w.z * 16.0 + w.y * 7.0)));
        vec3 col = skin;
-       col = mix(col, uHairColor, pubic * (0.28 + 0.34 * strand) * (0.35 + 0.65 * uMelanin));
+       col = mix(col, uHairColor, pubic * (0.12 + 0.18 * strand) * (0.25 + 0.55 * uMelanin));
        col = mix(col, mix(col, uAttenuation, 0.55), touchResponse * 0.4);
        float cheek = atlasSoft(w.y, 1.52, 1.545) * (1.0 - atlasSoft(w.y, 1.60, 1.62))
          * atlasSoft(ax, 0.018, 0.028) * (1.0 - atlasSoft(ax, 0.062, 0.078))
@@ -200,7 +203,7 @@ export function injectPhotorealSkin(
     .replace(
       "#include <tonemapping_fragment>",
       `#include <tonemapping_fragment>
-       gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.9);`,
+       gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.93);`,
     );
 }
 

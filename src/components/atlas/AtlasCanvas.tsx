@@ -79,8 +79,6 @@ function ContextLossOverlay({ onReload }: { onReload: () => void }) {
 
 export function AtlasCanvas() {
   const phone = useIsPhone();
-  const cameraGoal = useAtlas((s) => s.cameraGoal);
-  const selectedId = useAtlas((s) => s.selectedId);
   const dissection = useAtlas((s) => s.dissection);
   const theme = useAtlas((s) => s.theme);
   const lightingPreset = useAtlas((s) => s.lightingPreset);

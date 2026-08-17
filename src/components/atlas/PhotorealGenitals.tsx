@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useGLTF, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -112,48 +112,52 @@ export function PhotorealGenitals() {
 
   const showInner = !photoreal || dissection >= 0.16 || isPelvisPoint(peelCenter);
   const showSurface = photoreal && dissection < 0.72;
-  const onBeforeCompileNude = useCallback(
-    (shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) => {
-      injectPeelShader(shader, uniforms.current);
-      injectGenitalSkin(shader, {
-        uArousal: living.current.uArousal,
-        uPhysiology: living.current.uPhysiology,
-        uPart: living.current.uPartShaft,
-        uFrontMap: living.current.uFrontMap,
-      });
-    },
-    []
-  );
-  const onBeforeCompileGlans = useCallback(
-    (shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) => {
-      injectPeelShader(shader, uniforms.current);
-      injectGenitalSkin(shader, {
-        uArousal: living.current.uArousal,
-        uPhysiology: living.current.uPhysiology,
-        uPart: living.current.uPartGlans,
-        uFrontMap: living.current.uFrontMap,
-      });
-    },
-    []
-  );
-  const onBeforeCompileScrotum = useCallback(
-    (shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) => {
-      injectPeelShader(shader, uniforms.current);
-      injectGenitalSkin(shader, {
-        uArousal: living.current.uArousal,
-        uPhysiology: living.current.uPhysiology,
-        uPart: living.current.uPartScrotum,
-        uFrontMap: living.current.uFrontMap,
-      });
-    },
-    []
-  );
-  const onBeforeCompilePlate = useCallback(
-    (shader: { vertexShader: string; fragmentShader: string; uniforms: Record<string, THREE.IUniform> }) => {
-      injectIllustrationShader(shader, "viscera");
-    },
-    [],
-  );
+  const onBeforeCompileNude = (shader: {
+    vertexShader: string;
+    fragmentShader: string;
+    uniforms: Record<string, THREE.IUniform>;
+  }) => {
+    injectPeelShader(shader, uniforms.current);
+    injectGenitalSkin(shader, {
+      uArousal: living.current.uArousal,
+      uPhysiology: living.current.uPhysiology,
+      uPart: living.current.uPartShaft,
+      uFrontMap: living.current.uFrontMap,
+    });
+  };
+  const onBeforeCompileGlans = (shader: {
+    vertexShader: string;
+    fragmentShader: string;
+    uniforms: Record<string, THREE.IUniform>;
+  }) => {
+    injectPeelShader(shader, uniforms.current);
+    injectGenitalSkin(shader, {
+      uArousal: living.current.uArousal,
+      uPhysiology: living.current.uPhysiology,
+      uPart: living.current.uPartGlans,
+      uFrontMap: living.current.uFrontMap,
+    });
+  };
+  const onBeforeCompileScrotum = (shader: {
+    vertexShader: string;
+    fragmentShader: string;
+    uniforms: Record<string, THREE.IUniform>;
+  }) => {
+    injectPeelShader(shader, uniforms.current);
+    injectGenitalSkin(shader, {
+      uArousal: living.current.uArousal,
+      uPhysiology: living.current.uPhysiology,
+      uPart: living.current.uPartScrotum,
+      uFrontMap: living.current.uFrontMap,
+    });
+  };
+  const onBeforeCompilePlate = (shader: {
+    vertexShader: string;
+    fragmentShader: string;
+    uniforms: Record<string, THREE.IUniform>;
+  }) => {
+    injectIllustrationShader(shader, "viscera");
+  };
 
   const applyStroke = (point: THREE.Vector3, name: string, amount: number) => {
     if (!useAtlas.getState().physiologyOn) return;

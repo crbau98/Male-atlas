@@ -80,31 +80,31 @@ export function injectPhotorealSkin(
       `#include <begin_vertex>
      float atlasChest = smoothstep(1.08, 1.18, position.y) * (1.0 - smoothstep(1.40, 1.48, position.y));
      float atlasAbdomen = smoothstep(0.90, 1.00, position.y) * (1.0 - smoothstep(1.16, 1.24, position.y));
-     float atlasBreath = atlasChest + atlasAbdomen * 0.62;
-     transformed += objectNormal * atlasBreath * sin(uBreathPhase) * uMotionAmount * (0.0095 + uArousal * 0.007);
+     float atlasBreath = (atlasChest * 0.9 + atlasAbdomen * 0.55) * smoothstep(0.02, 0.08, position.z);
+     transformed += objectNormal * atlasBreath * sin(uBreathPhase) * uMotionAmount * (0.0075 + uArousal * 0.005);
      vec3 atlasTouchWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;
      float atlasTouchPush = exp(-pow(distance(atlasTouchWorld, uTouchPoint) / 0.055, 2.0));
-     transformed += objectNormal * atlasTouchPush * uTouchStrength * uPhysiology * (0.004 + uAffect * 0.003);
-     float atlasPelvis = smoothstep(0.76, 0.84, position.y) * (1.0 - smoothstep(0.92, 0.98, position.y));
-     transformed += objectNormal * atlasPelvis * uArousal * uPhysiology * 0.004;
-     float faceBand = smoothstep(1.485, 1.52, position.y);
-     float mouthBand = faceBand * (1.0 - smoothstep(1.555, 1.585, position.y)) * smoothstep(0.05, 0.10, position.z);
-     float corner = mouthBand * smoothstep(0.016, 0.036, abs(position.x));
-     transformed.y += corner * uSmile * 0.0075;
-     transformed.z -= corner * uSmile * 0.003;
-     float brow = smoothstep(1.605, 1.62, position.y) * (1.0 - smoothstep(1.645, 1.66, position.y)) * smoothstep(0.04, 0.09, position.z);
-     transformed.y += brow * uBrow * 0.0038;
-     float lid = smoothstep(1.588, 1.60, position.y) * (1.0 - smoothstep(1.618, 1.632, position.y))
-       * (1.0 - smoothstep(0.055, 0.07, abs(position.x))) * smoothstep(0.05, 0.09, position.z);
-     transformed.y -= lid * uLid * 0.0058;
-     float jaw = smoothstep(1.49, 1.51, position.y) * (1.0 - smoothstep(1.545, 1.56, position.y))
-       * smoothstep(0.04, 0.09, position.z) * (1.0 - smoothstep(0.05, 0.08, abs(position.x)));
-     transformed.y -= jaw * uJaw * 0.006;
+     transformed += objectNormal * atlasTouchPush * uTouchStrength * uPhysiology * (0.0035 + uAffect * 0.0025);
+     float atlasPelvis = smoothstep(0.76, 0.84, position.y) * (1.0 - smoothstep(0.92, 0.98, position.y)) * smoothstep(0.02, 0.08, position.z);
+     transformed += objectNormal * atlasPelvis * uArousal * uPhysiology * 0.0025;
+     // Face emotional micro-expressions centered on anatomical facial landmarks
+     float mouthBand = smoothstep(1.48, 1.51, position.y) * (1.0 - smoothstep(1.54, 1.57, position.y)) * smoothstep(0.06, 0.11, position.z);
+     float corner = mouthBand * smoothstep(0.018, 0.042, abs(position.x)) * (1.0 - smoothstep(0.055, 0.075, abs(position.x)));
+     transformed.y += corner * uSmile * 0.0055;
+     transformed.z -= corner * uSmile * 0.002;
+     float brow = smoothstep(1.615, 1.63, position.y) * (1.0 - smoothstep(1.655, 1.67, position.y)) * smoothstep(0.06, 0.11, position.z);
+     transformed.y += brow * uBrow * 0.0028;
+     float lid = smoothstep(1.588, 1.602, position.y) * (1.0 - smoothstep(1.618, 1.632, position.y))
+       * (1.0 - smoothstep(0.055, 0.075, abs(position.x))) * smoothstep(0.06, 0.11, position.z);
+     transformed.y -= lid * uLid * 0.0038;
+     float jaw = smoothstep(1.47, 1.49, position.y) * (1.0 - smoothstep(1.52, 1.54, position.y))
+       * smoothstep(0.05, 0.10, position.z) * (1.0 - smoothstep(0.04, 0.07, abs(position.x)));
+     transformed.y -= jaw * uJaw * 0.004;
      float nipple = (
-       exp(-pow(distance(position.xy, vec2(0.092, 1.272)) / 0.012, 2.0)) +
-       exp(-pow(distance(position.xy, vec2(-0.092, 1.272)) / 0.012, 2.0))
+       exp(-pow(distance(position.xy, vec2(0.092, 1.272)) / 0.014, 2.0)) +
+       exp(-pow(distance(position.xy, vec2(-0.092, 1.272)) / 0.014, 2.0))
      ) * smoothstep(0.06, 0.09, position.z);
-     transformed += objectNormal * nipple * uArousal * uPhysiology * 0.0036;`,
+     transformed += objectNormal * nipple * uArousal * uPhysiology * 0.0032;`,
     );
   shader.fragmentShader = shader.fragmentShader
     .replace(

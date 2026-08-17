@@ -215,7 +215,7 @@ export function PhotorealShell() {
         uBackMap: uniforms.current.uBackMap,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v7-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v8-${appearance.id}`;
     return mat;
   }, [albedo, appearance]);
 
@@ -390,7 +390,7 @@ export function PhotorealShell() {
             const radius = useAtlas.getState().peelRadius;
             setPeelRadius(Math.min(0.32, radius + 0.012));
           }, 70);
-        }, 620);
+        }, 450);
       }}
       onPointerMove={(event: PointerHit) => {
         if (!gesture.current.down) return;
@@ -405,7 +405,7 @@ export function PhotorealShell() {
         gesture.current.point = [event.point.x, event.point.y, event.point.z];
         const genital = pickGenitalFromPoint(event.point.x, event.point.y, event.point.z);
         gesture.current.genital = genital;
-        if (dx * dx + dy * dy > 64) {
+        if (dx * dx + dy * dy > 144) {
           gesture.current.dragged = true;
           if (!gesture.current.peeled) stopHold();
         }
@@ -415,7 +415,7 @@ export function PhotorealShell() {
         if (!gesture.current.down) return;
         const g = gesture.current;
         const dt = performance.now() - g.t;
-        const shouldPeel = !g.dragged && !g.peeled && dt < 620;
+        const shouldPeel = !g.dragged && !g.peeled && dt < 450;
         endStroke();
         if (shouldPeel) startPeel(g.point, g.genital);
       }}

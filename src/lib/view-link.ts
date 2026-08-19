@@ -26,7 +26,7 @@ export function buildViewUrl(): string {
   if (s.lightingPreset !== "museum") params.set("light", s.lightingPreset);
   if (s.qualityMode !== "auto") params.set("quality", s.qualityMode);
   if (!s.physiologyOn) params.set("living", "0");
-  if (Math.abs(s.physiologyIntensity - 0.68) > 0.01) {
+  if (Math.abs(s.physiologyIntensity - 0.85) > 0.01) {
     params.set("response", s.physiologyIntensity.toFixed(2));
   }
   if (!s.breathingOn) params.set("breath", "0");

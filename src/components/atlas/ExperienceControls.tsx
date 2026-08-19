@@ -76,10 +76,10 @@ export function ExperienceControls() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-[10px] tracking-[0.2em] text-[var(--atlas-accent)] uppercase">
-            Living model
+            Male sexual arousal physiology
           </p>
           <p className="mt-1 text-[11px] leading-4 text-[var(--atlas-muted)]">
-            Stroke the skin. Face shows emotion; pelvis shows tumescence, dartos, and flush.
+            Interactive erectile physiology: touch shaft, glans, scrotum, or body to trigger realistic tumescence, vascular flush, and dartos reflex.
           </p>
         </div>
         <button

@@ -12,13 +12,13 @@ export function LivingHud() {
   if (affect < 0.04 && arousal < 0.04) return null;
 
   return (
-    <div className="pointer-events-none max-w-[13.5rem] rounded-2xl border border-white/10 bg-[#101218]/82 px-3 py-2 backdrop-blur-md">
-      <p className="text-[10px] tracking-[0.18em] text-[#c4a46c] uppercase">Living response</p>
-      <p className="mt-1 text-[11px] leading-4 text-[#d8d4cc]">{zoneLabel(touchZone)}</p>
+    <div className="pointer-events-none max-w-[15rem] rounded-2xl border border-white/10 bg-[#101218]/90 px-3.5 py-2.5 backdrop-blur-md shadow-xl">
+      <p className="text-[10px] tracking-[0.2em] text-[#c4a46c] uppercase font-medium">Male sexual physiology</p>
+      <p className="mt-1 text-[11px] leading-4 text-[#efece6] font-medium">{zoneLabel(touchZone)}</p>
       <p className="mt-1 text-[10px] leading-4 text-[#b7b3aa]">
-        {arousal > affect
-          ? "Heavier lids, tumescence, scrotum tightening"
-          : "Softer mouth, open eyes, skin warmth"}
+        {arousal > 0.4
+          ? "Penile erection, glans engorgement, scrotal dartos contraction"
+          : "Vascular tumescence, tactile warmth, physiological arousal"}
       </p>
       <Meter label="Warmth" value={affect} color="#c4a46c" />
       <Meter label="Arousal" value={arousal} color="#c45a48" />

@@ -11,16 +11,11 @@ import { useIsPhone } from "@/lib/use-is-phone";
 import { canvasRef, captureFrameRef } from "@/lib/canvas-ref";
 import { haptic } from "@/lib/haptics";
 import { LIGHTING_PRESETS } from "@/lib/lighting-presets";
-import { AnatomyCallouts } from "./AnatomyCallouts";
-import { AnatomyLayers } from "./AnatomyLayers";
 import { CameraRig } from "./CameraRig";
-import { GhostShell } from "./GhostShell";
-import { Hotspots } from "./Hotspots";
 import { LoadBoundary } from "./LoadBoundary";
 import { LocalStudio } from "./LocalStudio";
 import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
-import { SectionPlanes } from "./SectionPlanes";
 
 function Lights({ shadows, shadowSize }: { shadows: boolean; shadowSize: number }) {
   const lightingPreset = useAtlas((s) => s.lightingPreset);
@@ -79,12 +74,11 @@ function ContextLossOverlay({ onReload }: { onReload: () => void }) {
 
 export function AtlasCanvas() {
   const phone = useIsPhone();
-  const dissection = useAtlas((s) => s.dissection);
+  const region = useAtlas((s) => s.region);
   const theme = useAtlas((s) => s.theme);
   const lightingPreset = useAtlas((s) => s.lightingPreset);
   const qualityMode = useAtlas((s) => s.qualityMode);
-  const start = REGIONS.full;
-  const paper = dissection > 0.16;
+  const start = REGIONS[region] ?? REGIONS.pelvis;
   const [contextLost, setContextLost] = useState(false);
   const [adaptiveDpr, setAdaptiveDpr] = useState(1.25);
   const lastMissedTap = useRef(0);
@@ -122,26 +116,6 @@ export function AtlasCanvas() {
       false,
     );
     canvas.addEventListener("webglcontextrestored", () => setContextLost(false), false);
-
-    if (canvas.dataset.atlasGestures !== "ready") {
-      canvas.dataset.atlasGestures = "ready";
-      canvas.addEventListener(
-        "touchstart",
-        (event) => {
-          if (event.touches.length !== 3) return;
-          event.preventDefault();
-          const atlas = useAtlas.getState();
-          haptic([9, 24, 9]);
-          const nextDepth = Math.min(1, atlas.dissection + 0.16);
-          atlas.setDissection(nextDepth);
-          if (!atlas.peelCenter) {
-            const fallback = REGIONS[atlas.region].peel ?? ([0, 1.22, 0.14] as [number, number, number]);
-            atlas.setPeel(fallback, 0.16);
-          }
-        },
-        { passive: false },
-      );
-    }
   }, []);
 
   const preset = LIGHTING_PRESETS[lightingPreset];
@@ -150,14 +124,12 @@ export function AtlasCanvas() {
   const dpr = Math.min(adaptiveDpr, qualityCap);
   const shadows = !phone || qualityMode === "high";
   const shadowSize = phone ? 512 : qualityMode === "high" ? 1536 : 1024;
-  const sceneBackground = paper
-    ? preset.background.light
-    : theme === "light"
+  const sceneBackground =
+    theme === "light"
       ? preset.background.light
       : preset.background.dark;
-  const groundColor = paper
-    ? preset.ground.light
-    : theme === "light"
+  const groundColor =
+    theme === "light"
       ? preset.ground.light
       : preset.ground.dark;
 
@@ -171,7 +143,7 @@ export function AtlasCanvas() {
           localClippingEnabled: true,
           powerPreference: "high-performance",
           preserveDrawingBuffer: false,
-          toneMapping: THREE.NoToneMapping,
+          toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: preset.exposure,
           outputColorSpace: THREE.SRGBColorSpace,
         }}
@@ -198,17 +170,8 @@ export function AtlasCanvas() {
             <PhotorealShell />
           </LoadBoundary>
           <LoadBoundary>
-            <GhostShell />
-          </LoadBoundary>
-          <LoadBoundary>
             <PhotorealGenitals />
           </LoadBoundary>
-          <LoadBoundary>
-            <AnatomyLayers />
-          </LoadBoundary>
-          <Hotspots />
-          <AnatomyCallouts />
-          <SectionPlanes />
         </Suspense>
         <ContactShadows
           position={[0, 0.001, 0]}
@@ -231,8 +194,8 @@ export function AtlasCanvas() {
           dampingFactor={0.072}
           autoRotate={false}
           autoRotateSpeed={0.22}
-          minDistance={0.14}
-          maxDistance={4.6}
+          minDistance={0.10}
+          maxDistance={3.8}
           maxPolarAngle={Math.PI * 0.94}
           target={start.target}
           touches={{

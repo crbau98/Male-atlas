@@ -12,24 +12,20 @@ export function AppearanceSelect() {
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] pt-[max(2rem,env(safe-area-inset-top))] md:gap-10 md:px-6 md:py-12">
         <header className="flex flex-col gap-3">
           <p className="text-xs tracking-[0.28em] text-[#c4a46c] uppercase">
-            Male Atlas
+            Male Atlas · Sexual Physiology & Genitalia
           </p>
           <h1 className="max-w-3xl font-serif text-4xl leading-tight md:text-6xl">
-            Photoreal male, then the named anatomy underneath.
+            Explicit male genitalia and living sexual arousal physiology.
           </h1>
           <p className="max-w-2xl text-sm leading-6 text-[#b7b3aa] md:text-base">
-            Choose a living nude look. Tap the body or raise dissection to peel
-            skin into BodyParts3D meshes — skeleton, muscle, viscera, vessels,
-            nerves, genitalia, and a parcellated brain. On a phone this opens
-            straight into the 3D atlas; Share → Add to Home Screen for a
-            full-screen app.
+            Choose a volunteer model to explore interactive male sexual physiology: natural penile erection, glans engorgement, scrotal dartos contraction, and responsive vascular flush under direct touch.
           </p>
           <button
             type="button"
             onClick={() => setAppearance("julian")}
             className="mt-2 min-h-12 w-fit rounded-full bg-[#c4a46c] px-5 text-sm tracking-wide text-[#16140f] uppercase"
           >
-            Open the atlas
+            Explore Genitalia & Physiology
           </button>
         </header>
 
@@ -64,12 +60,7 @@ export function AppearanceSelect() {
         </div>
 
         <p className="max-w-3xl text-[11px] leading-5 text-[#7d796f]">
-          Appearances tint the photoreal male surface (hair, melanin, iris).
-          External genitalia use BodyParts3D IS-A meshes (glans, corpora,
-          testes) with skin shading; tap Pelvis to inspect them. Gallery
-          portraits are clothed references. Body mesh: Blender Studio Human
-          Base Meshes, CC0. Anatomy: BodyParts3D, © The Database Center for
-          Life Science, CC BY 4.0.
+          Interactive sexual physiology and explicit external male genitalia (glans, corpora cavernosa, scrotum, testes) with continuous PBR skin shading, erectile enlargement, vascular engorgement, and dartos response.
         </p>
       </div>
     </div>

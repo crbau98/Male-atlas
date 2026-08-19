@@ -12,9 +12,7 @@ import { pulseHaptic } from "@/lib/living-touch";
 import { injectPeelShader } from "@/lib/peel-shader";
 import { injectEyeShader, injectPhotorealSkin } from "@/lib/skin-shader";
 import { closeupAmount } from "@/lib/skin-maps";
-import { tapPart } from "@/lib/tap-part";
 import { useClipPlanes } from "@/lib/use-clip-planes";
-import { haptic } from "@/lib/haptics";
 
 const BODY_URL = "/models/photoreal-male.glb";
 const ALBEDO_URL = "/skins/photoreal-male-albedo.png";
@@ -29,18 +27,11 @@ type PointerHit = {
 
 export function PhotorealShell() {
   const appearanceId = useAtlas((s) => s.appearanceId);
-  const dissection = useAtlas((s) => s.dissection);
-  const peelCenter = useAtlas((s) => s.peelCenter);
-  const peelRadius = useAtlas((s) => s.peelRadius);
   const photoreal = useAtlas((s) => s.photoreal);
   const physiologyOn = useAtlas((s) => s.physiologyOn);
   const physiologyIntensity = useAtlas((s) => s.physiologyIntensity);
   const breathingOn = useAtlas((s) => s.breathingOn);
-  const setPeel = useAtlas((s) => s.setPeel);
-  const setDissection = useAtlas((s) => s.setDissection);
-  const setPeelRadius = useAtlas((s) => s.setPeelRadius);
   const setLiving = useAtlas((s) => s.setLiving);
-  const lookAt = useAtlas((s) => s.lookAt);
   const planes = useClipPlanes();
   const hold = useRef<ReturnType<typeof setInterval> | null>(null);
   const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +49,6 @@ export function PhotorealShell() {
   });
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);
-  const lastPeel = useRef<string>("");
   const closeAmt = useRef(0);
   const skinMat = useRef<THREE.MeshPhysicalMaterial | null>(null);
   const touchTarget = useRef(0);
@@ -78,19 +68,9 @@ export function PhotorealShell() {
     }
   };
 
-  const startPeel = (point: [number, number, number], genital: string | null) => {
-    if (genital) tapPart(genital, point);
-    else {
-      haptic(12);
-      lookAt(point);
-    }
-    setPeel(point, genital ? 0.1 : 0.14);
-    if (useAtlas.getState().dissection < 0.1) setDissection(genital ? 0.22 : 0.18);
-  };
-
   const appearance = appearanceById(appearanceId ?? "julian");
   const gltf = useGLTF(BODY_URL);
-  const albedo = useTexture(ALBEDO_URL, (tex) => {
+  const albedo = useTexture(appearance.albedo, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.flipY = false;
     tex.wrapS = THREE.ClampToEdgeWrapping;
@@ -98,13 +78,25 @@ export function PhotorealShell() {
     tex.anisotropy = 8;
     tex.needsUpdate = true;
   });
-  const faceMap = useTexture(FACE_URL, (tex) => {
+  const faceMap = useTexture(appearance.portrait, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.flipY = true;
     tex.wrapS = THREE.ClampToEdgeWrapping;
     tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.anisotropy = 8;
     tex.needsUpdate = true;
+  });
+  const normalMap = useTexture(appearance.normal, (tex) => {
+    tex.flipY = false;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 8;
+  });
+  const roughnessMap = useTexture(appearance.roughness, (tex) => {
+    tex.flipY = false;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.anisotropy = 8;
   });
   const frontMap = useTexture(FRONT_URL, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -177,16 +169,19 @@ export function PhotorealShell() {
   const material = useMemo(() => {
     const mat = new THREE.MeshPhysicalMaterial({
       map: albedo,
-      color: "#ffffff",
-      roughness: 0.72 + appearance.melanin * 0.06,
+      normalMap,
+      normalScale: new THREE.Vector2(0.28, 0.28),
+      roughnessMap,
+      roughness: 0.68 + appearance.melanin * 0.05,
       metalness: 0,
       sheen: 0.08,
       sheenColor: new THREE.Color(appearance.sheen),
-      sheenRoughness: 0.72,
-      clearcoat: 0,
-      ior: 1.38,
-      specularIntensity: 0.06,
-      envMapIntensity: 0.08,
+      sheenRoughness: 0.68,
+      clearcoat: 0.04,
+      clearcoatRoughness: 0.45,
+      ior: 1.42,
+      specularIntensity: 0.08,
+      envMapIntensity: 0.12,
       side: THREE.FrontSide,
     });
     mat.onBeforeCompile = (shader) => {
@@ -215,9 +210,9 @@ export function PhotorealShell() {
         uBackMap: uniforms.current.uBackMap,
       });
     };
-    mat.customProgramCacheKey = () => `skin-photo-v8-${appearance.id}`;
+    mat.customProgramCacheKey = () => `skin-photo-v11-${appearance.id}`;
     return mat;
-  }, [albedo, appearance]);
+  }, [albedo, normalMap, roughnessMap, appearance]);
 
   useLayoutEffect(() => {
     skinMat.current = material;
@@ -255,7 +250,9 @@ export function PhotorealShell() {
     const phys = physiologyOn ? physiologyIntensity : 0;
     livingRuntime.decay(delta);
     const { affect, arousal } = livingRuntime;
-    u.uDissection.value = THREE.MathUtils.damp(u.uDissection.value, dissection, 3.4, delta);
+    u.uDissection.value = 0;
+    u.uHasWindow.value = 0;
+    u.uWindowRadius.value = 0;
     u.uHairColor.value.set(appearance.hair);
     u.uSkinTint.value.set(appearance.skinTint);
     u.uMelanin.value = appearance.melanin;
@@ -290,19 +287,6 @@ export function PhotorealShell() {
       2.2,
       delta,
     );
-    const key = peelCenter ? peelCenter.join(",") : "";
-    if (key !== lastPeel.current) {
-      lastPeel.current = key;
-      if (peelCenter) u.uWindowRadius.value = 0.02;
-    }
-    u.uHasWindow.value = THREE.MathUtils.damp(u.uHasWindow.value, peelCenter ? 1 : 0, 5, delta);
-    u.uWindowRadius.value = THREE.MathUtils.damp(
-      u.uWindowRadius.value,
-      peelCenter ? peelRadius : 0,
-      4.2,
-      delta,
-    );
-    if (peelCenter) u.uWindowCenter.value.set(...peelCenter);
 
     const orbit = controls as unknown as { target?: THREE.Vector3 } | null;
     const target = orbit?.target ?? new THREE.Vector3(0, 0.92, 0);
@@ -311,9 +295,16 @@ export function PhotorealShell() {
     u.uClose.value = closeAmt.current;
     const mat = skinMat.current;
     if (mat) {
-      mat.envMapIntensity = 0.06 + closeAmt.current * 0.04;
-      mat.sheen = 0.06 + affect * 0.04 + arousal * 0.05;
-      mat.sheenRoughness = THREE.MathUtils.clamp(0.62 - arousal * 0.1, 0.4, 0.75);
+      mat.envMapIntensity = 0.12 + closeAmt.current * 0.06;
+      mat.roughness = THREE.MathUtils.clamp(
+        (0.68 + appearance.melanin * 0.05) - arousal * 0.12,
+        0.35,
+        0.85,
+      );
+      mat.sheen = 0.08 + affect * 0.04 + arousal * 0.08;
+      mat.sheenRoughness = THREE.MathUtils.clamp(0.68 - arousal * 0.15, 0.35, 0.75);
+      mat.clearcoat = 0.04 + arousal * 0.10;
+      mat.clearcoatRoughness = THREE.MathUtils.clamp(0.45 - arousal * 0.15, 0.2, 0.5);
     }
 
     pupil.current = THREE.MathUtils.damp(pupil.current, u.uPupil.value, 5.2, delta);
@@ -382,15 +373,6 @@ export function PhotorealShell() {
         };
         strokeAt(event.point, genital, 8);
         stopHold();
-        holdDelay.current = setTimeout(() => {
-          if (gesture.current.dragged) return;
-          gesture.current.peeled = true;
-          startPeel(gesture.current.point, gesture.current.genital);
-          hold.current = setInterval(() => {
-            const radius = useAtlas.getState().peelRadius;
-            setPeelRadius(Math.min(0.32, radius + 0.012));
-          }, 70);
-        }, 450);
       }}
       onPointerMove={(event: PointerHit) => {
         if (!gesture.current.down) return;
@@ -413,11 +395,7 @@ export function PhotorealShell() {
       }}
       onPointerUp={() => {
         if (!gesture.current.down) return;
-        const g = gesture.current;
-        const dt = performance.now() - g.t;
-        const shouldPeel = !g.dragged && !g.peeled && dt < 450;
         endStroke();
-        if (shouldPeel) startPeel(g.point, g.genital);
       }}
       onPointerLeave={() => {
         if (gesture.current.down) return;

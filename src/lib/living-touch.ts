@@ -18,30 +18,30 @@ export function touchZone(
 export function zoneGains(zone: TouchZone): { affect: number; arousal: number } {
   switch (zone) {
     case "face":
-      return { affect: 0.92, arousal: 0.1 };
+      return { affect: 0.82, arousal: 0.25 };
     case "chest":
-      return { affect: 0.72, arousal: 0.3 };
+      return { affect: 0.65, arousal: 0.55 };
     case "belly":
-      return { affect: 0.48, arousal: 0.24 };
+      return { affect: 0.42, arousal: 0.68 };
     case "pelvis":
-      return { affect: 0.38, arousal: 1 };
+      return { affect: 0.35, arousal: 1.6 };
     default:
-      return { affect: 0.22, arousal: 0.08 };
+      return { affect: 0.20, arousal: 0.22 };
   }
 }
 
 export function zoneLabel(zone: TouchZone | null): string {
   switch (zone) {
     case "face":
-      return "Face — warmth in the eyes, a softer mouth";
+      return "Face — softened expression, responsive warmth";
     case "chest":
-      return "Chest — flush, closer breath, nipples";
+      return "Chest — deeper breath, vascular flush, nipple sensitivity";
     case "belly":
-      return "Belly — settling, slower breath";
+      return "Lower abdomen — pelvic blood flow acceleration";
     case "pelvis":
-      return "Pelvis — tumescence, dartos, vascular flush";
+      return "Genitalia — penile erection, glans engorgement, scrotal dartos contraction";
     case "limb":
-      return "Skin — light affect";
+      return "Sensory skin response";
     default:
       return "Touch the living surface";
   }

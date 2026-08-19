@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Male Atlas",
+  title: "Male Atlas — Sexual Physiology & Genitalia",
   description:
-    "Photoreal nude male body on the phone: tap to peel into named 3D anatomy, including brain and genitalia.",
+    "Interactive 3D model focused on explicit male genitalia and living male sexual arousal physiology.",
   applicationName: "Male Atlas",
   manifest: "/manifest.webmanifest",
   appleWebApp: {

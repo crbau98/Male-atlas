@@ -197,11 +197,6 @@ export function injectPhotorealSkin(
          0.08,
          0.95
        );`,
-    )
-    .replace(
-      "#include <tonemapping_fragment>",
-      `#include <tonemapping_fragment>
-       gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.93);`,
     );
 }
 

@@ -5,66 +5,84 @@ export function injectGenitalSkin(
   extra: Record<string, IUniform>,
 ) {
   Object.assign(shader.uniforms, extra);
-  shader.vertexShader = shader.vertexShader.replace(
-    "#include <common>",
-    `#include <common>
-     uniform float uArousal;
-     uniform float uPhysiology;
-     varying vec3 vGenitalObj;`,
-  ).replace(
-    "#include <begin_vertex>",
-    `#include <begin_vertex>
-     vGenitalObj = position;
-     float dartos = uArousal * uPhysiology;
-     transformed += objectNormal * sin(position.x * 90.0 + position.y * 70.0) * dartos * 0.0014;`,
-  );
-  shader.fragmentShader = shader.fragmentShader.replace(
-    "#include <common>",
-    `#include <common>
-     uniform float uArousal;
-     uniform float uPhysiology;
-     uniform float uPart;
-     uniform sampler2D uFrontMap;
-     varying vec3 vGenitalObj;`,
-  ).replace(
-    "#include <color_fragment>",
-    `#include <color_fragment>
-     float a = uArousal * uPhysiology;
-     vec3 col = diffuseColor.rgb;
-     vec3 blood = vec3(0.52, 0.16, 0.18);
-     vec3 dusk = vec3(0.38, 0.12, 0.16);
-     vec2 photoUV = vec2(
-       clamp(0.515 + vAtlasWorld.x * 0.95, 0.0, 1.0),
-       clamp(-0.343 + 0.734 * vAtlasWorld.y, 0.0, 1.0)
-     );
-     vec3 photo = texture2D(uFrontMap, photoUV).rgb;
-     float photoLuma = dot(photo, vec3(0.299, 0.587, 0.114));
-     float photoSat = max(max(photo.r, photo.g), photo.b) - min(min(photo.r, photo.g), photo.b);
-     float photoLive = step(0.08, photoLuma) * step(0.05, photoSat) * (1.0 - step(0.8, photoLuma));
-     col = mix(col, photo, photoLive * 0.55);
-     if (uPart > 1.5) {
-       col = mix(col, dusk, a * 0.55);
-       col *= 1.0 - a * 0.08;
-     } else if (uPart > 0.5) {
-       col = mix(col, blood, 0.18 + a * 0.5);
-     } else {
-       col = mix(col, blood, a * 0.28);
-     }
-     diffuseColor.rgb = col;`,
-  ).replace(
-    "#include <roughnessmap_fragment>",
-    `#include <roughnessmap_fragment>
-     float aR = uArousal * uPhysiology;
-     if (uPart > 1.5) {
-       roughnessFactor = clamp(roughnessFactor + 0.08 + aR * 0.12, 0.12, 0.92);
-     } else if (uPart > 0.5) {
-       roughnessFactor = clamp(roughnessFactor - aR * 0.22, 0.08, 0.7);
-     } else {
-       roughnessFactor = clamp(roughnessFactor - aR * 0.12, 0.14, 0.8);
-     }`,
-  ).replace(
-    "#include <tonemapping_fragment>",
-    `#include <tonemapping_fragment>
-     gl_FragColor.rgb = mix(gl_FragColor.rgb, diffuseColor.rgb, 0.72);`,
-  );
+
+  shader.vertexShader = shader.vertexShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       uniform float uArousal;
+       uniform float uPhysiology;
+       varying vec3 vGenitalObj;
+       varying vec3 vGenitalWorld;`,
+    )
+    .replace(
+      "#include <begin_vertex>",
+      `#include <begin_vertex>
+       vGenitalObj = position;
+       float dartos = uArousal * uPhysiology;
+       // Micro-pulsations and dartos contractility
+       transformed += objectNormal * sin(position.x * 120.0 + position.y * 80.0) * dartos * 0.0012;
+       vGenitalWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;`,
+    );
+
+  shader.fragmentShader = shader.fragmentShader
+    .replace(
+      "#include <common>",
+      `#include <common>
+       uniform float uArousal;
+       uniform float uPhysiology;
+       uniform float uPart; // 0: shaft, 1: glans, 2: scrotum
+       varying vec3 vGenitalObj;
+       varying vec3 vGenitalWorld;`,
+    )
+    .replace(
+      "#include <color_fragment>",
+      `#include <color_fragment>
+       float a = uArousal * uPhysiology;
+       vec3 col = diffuseColor.rgb;
+
+       // Physiological vascular and mucosal tones
+       vec3 deepArterial = vec3(0.72, 0.20, 0.24);
+       vec3 scrotalDusk = vec3(0.46, 0.14, 0.18);
+       vec3 glansEngorged = vec3(0.82, 0.26, 0.32);
+
+       if (uPart > 1.5) {
+         // Scrotum: Dartos reflex, increased vascular saturation and dusky tone
+         col = mix(col, scrotalDusk, a * 0.58);
+         col *= 1.0 - a * 0.08;
+       } else if (uPart > 0.5) {
+         // Glans: Prominent arterial hyperemia, coronal tumescence flush, mucosal redness
+         col = mix(col, glansEngorged, 0.24 + a * 0.68);
+         // Corona glandis heightened flush
+         if (vGenitalObj.y < 0.022 && vGenitalObj.y > 0.005) {
+           col = mix(col, vec3(0.88, 0.24, 0.30), a * 0.35);
+         }
+       } else {
+         // Shaft: Corpora cavernosa blood engorgement & dorsal vein dilation
+         col = mix(col, deepArterial, 0.10 + a * 0.52);
+         // Dorsal vein prominent blue-violet arterial flush along midline
+         if (vGenitalObj.z > 0.004) {
+           float veinMask = exp(-pow(vGenitalObj.x / 0.0035, 2.0));
+           vec3 veinColor = vec3(0.42, 0.22, 0.38);
+           col = mix(col, veinColor, veinMask * a * 0.38);
+         }
+       }
+
+       diffuseColor.rgb = col;`,
+    )
+    .replace(
+      "#include <roughnessmap_fragment>",
+      `#include <roughnessmap_fragment>
+       float aR = uArousal * uPhysiology;
+       if (uPart > 1.5) {
+         // Scrotum: Dartos tightening creates taut rugae with slight moist sheen
+         roughnessFactor = clamp(roughnessFactor - aR * 0.14, 0.22, 0.85);
+       } else if (uPart > 0.5) {
+         // Glans: High mucosal turgidity creates glossy, reflective, moist surface
+         roughnessFactor = clamp(roughnessFactor - aR * 0.35, 0.04, 0.45);
+       } else {
+         // Shaft: Taut erectile skin with lubricated sheen
+         roughnessFactor = clamp(roughnessFactor - aR * 0.26, 0.06, 0.65);
+       }`,
+    );
 }

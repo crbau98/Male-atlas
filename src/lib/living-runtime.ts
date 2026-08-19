@@ -31,8 +31,8 @@ export const livingRuntime = {
   },
   decay(dt: number) {
     if (this.stroking) return;
-    this.affect = damp(this.affect, 0, 0.55, dt);
-    this.arousal = damp(this.arousal, 0, 0.22, dt);
+    this.affect = damp(this.affect, 0, 0.28, dt);
+    this.arousal = damp(this.arousal, 0, 0.12, dt);
     if (this.affect < 0.008) this.affect = 0;
     if (this.arousal < 0.008) this.arousal = 0;
     if (this.affect === 0 && this.arousal === 0) this.zone = null;

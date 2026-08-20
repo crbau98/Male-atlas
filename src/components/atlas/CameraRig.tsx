@@ -5,14 +5,11 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { useAtlas } from "@/lib/atlas-store";
 
-const DURATION = 1.08;
+const DURATION = 0.85;
 const startEye = new THREE.Vector3();
 const startTarget = new THREE.Vector3();
 const endEye = new THREE.Vector3();
 const endTarget = new THREE.Vector3();
-const side = new THREE.Vector3();
-const chord = new THREE.Vector3();
-const up = new THREE.Vector3(0, 1, 0);
 
 export function CameraRig() {
   const goal = useAtlas((s) => s.cameraGoal);
@@ -42,12 +39,10 @@ export function CameraRig() {
     if (!goal || !controls || t.current >= 1) return;
     const orbit = controls as unknown as { target: THREE.Vector3; update: () => void };
     t.current = Math.min(1, t.current + delta / DURATION);
-    const e = t.current * t.current * (3 - 2 * t.current);
-    chord.copy(endEye).sub(startEye);
-    side.copy(chord).cross(up);
-    if (side.lengthSq() < 1e-6) side.set(1, 0, 0);
-    side.normalize().multiplyScalar(Math.sin(Math.PI * e) * chord.length() * 0.14);
-    camera.position.lerpVectors(startEye, endEye, e).add(side);
+    // Smooth quintic ease in-out
+    const p = t.current;
+    const e = p < 0.5 ? 16 * p * p * p * p * p : 1 - Math.pow(-2 * p + 2, 5) / 2;
+    camera.position.lerpVectors(startEye, endEye, e);
     orbit.target.lerpVectors(startTarget, endTarget, e);
     orbit.update();
     if (t.current >= 1) clearCameraGoal();

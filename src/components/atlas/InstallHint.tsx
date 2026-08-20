@@ -5,24 +5,29 @@ import { useEffect, useState } from "react";
 type InstallEvent = Event & { prompt: () => Promise<void> };
 
 function isStandalone() {
-  if (typeof window === "undefined") return true;
   const media = window.matchMedia("(display-mode: standalone)");
   const nav = window.navigator as Navigator & { standalone?: boolean };
   return media.matches || Boolean(nav.standalone);
 }
 
 export function InstallHint() {
-  const [standalone] = useState(isStandalone);
+  // Default true (hidden) matches SSR so the first client hydration pass
+  // renders identical markup to the server; the real value lands post-mount.
+  const [standalone, setStandalone] = useState(true);
   const [installEvent, setInstallEvent] = useState<InstallEvent | null>(null);
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
+    const id = window.setTimeout(() => setStandalone(isStandalone()), 0);
     const onPrompt = (event: Event) => {
       event.preventDefault();
       setInstallEvent(event as InstallEvent);
     };
     window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+    };
   }, []);
 
   if (standalone || hidden) return null;

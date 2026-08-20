@@ -13,7 +13,7 @@ export function GhostShell() {
   const peelCenter = useAtlas((s) => s.peelCenter);
   const peelRadius = useAtlas((s) => s.peelRadius);
   const photoreal = useAtlas((s) => s.photoreal);
-  const gltf = useGLTF("/models/systems/integument.glb");
+  const gltf = useGLTF("/models/photoreal-male.glb");
   const planes = useClipPlanes();
   const lastPeel = useRef("");
   const matRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
@@ -29,7 +29,7 @@ export function GhostShell() {
     let geo: THREE.BufferGeometry | undefined;
     gltf.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
-      if (mesh.isMesh && mesh.name === "FJ2810") geo = mesh.geometry;
+      if (mesh.isMesh && mesh.name === "PhotorealMale") geo = mesh.geometry;
     });
     return geo;
   }, [gltf.scene]);

@@ -1,168 +1,113 @@
 "use client";
 
+import { useState } from "react";
 import { useAtlas } from "@/lib/atlas-store";
-import { REGIONS, type RegionId } from "@/lib/regions";
+import { captureView } from "@/lib/screenshot";
+import { shareCurrentView } from "@/lib/view-link";
 import { AppearanceStrip } from "./AppearanceSelect";
-
-function Slider({
-  label,
-  value,
-  onChange,
-  min = 0,
-  max = 1,
-}: {
-  label: string;
-  value: number;
-  onChange: (v: number) => void;
-  min?: number;
-  max?: number;
-}) {
-  return (
-    <label className="flex min-w-0 flex-1 flex-col gap-1 text-[11px] tracking-wide text-[#b7b3aa] uppercase">
-      {label}
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={0.01}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="h-8 accent-[#c4a46c]"
-      />
-    </label>
-  );
-}
+import { ExperienceControls } from "./ExperienceControls";
 
 export function LayerBar({ compact = false }: { compact?: boolean }) {
-  const dissection = useAtlas((s) => s.dissection);
-  const explode = useAtlas((s) => s.explode);
-  const clipY = useAtlas((s) => s.clipY);
-  const clipEnabled = useAtlas((s) => s.clipEnabled);
-  const photoreal = useAtlas((s) => s.photoreal);
-  const region = useAtlas((s) => s.region);
-  const tourIndex = useAtlas((s) => s.tourIndex);
-  const setDissection = useAtlas((s) => s.setDissection);
-  const setExplode = useAtlas((s) => s.setExplode);
-  const setClipY = useAtlas((s) => s.setClipY);
-  const setClipEnabled = useAtlas((s) => s.setClipEnabled);
-  const setPhotoreal = useAtlas((s) => s.setPhotoreal);
-  const goRegion = useAtlas((s) => s.goRegion);
-  const startTour = useAtlas((s) => s.startTour);
-  const stopTour = useAtlas((s) => s.stopTour);
+  const arousal = useAtlas((s) => s.arousal);
+  const setLiving = useAtlas((s) => s.setLiving);
   const resetView = useAtlas((s) => s.resetView);
-  const setPeel = useAtlas((s) => s.setPeel);
-  const undoHide = useAtlas((s) => s.undoHide);
-  const focusSelection = useAtlas((s) => s.focusSelection);
-  const selectedId = useAtlas((s) => s.selectedId);
-  const showLabels = useAtlas((s) => s.showLabels);
-  const toggleLabels = useAtlas((s) => s.toggleLabels);
-  const clipMode = useAtlas((s) => s.clipMode);
-  const setClipMode = useAtlas((s) => s.setClipMode);
-  const contextOn = useAtlas((s) => s.contextOn);
-  const toggleContext = useAtlas((s) => s.toggleContext);
-  const pathwayOn = useAtlas((s) => s.pathwayOn);
-  const togglePathway = useAtlas((s) => s.togglePathway);
-  const xrayOn = useAtlas((s) => s.xrayOn);
-  const toggleXray = useAtlas((s) => s.toggleXray);
-  const demoIndex = useAtlas((s) => s.demoIndex);
-  const startDemo = useAtlas((s) => s.startDemo);
-  const stopDemo = useAtlas((s) => s.stopDemo);
+  const [toast, setToast] = useState<string | null>(null);
+
+  const flash = (msg: string) => {
+    setToast(msg);
+    window.setTimeout(() => setToast((t) => (t === msg ? null : t)), 1800);
+  };
+
+  const onShare = async () => {
+    const result = await shareCurrentView();
+    if (result === "shared") return;
+    if (result === "copied") flash("Link copied");
+    else flash("Couldn't share");
+  };
+
+  const onSnapshot = async () => {
+    const result = await captureView();
+    if (result === "shared") return;
+    if (result === "downloaded") flash("Image saved");
+    else flash("Couldn't capture");
+  };
 
   const chip = (on: boolean) =>
-    `min-h-11 rounded-full px-3 py-1.5 text-xs ${
-      on ? "bg-[#c4a46c] text-[#16140f]" : "border border-white/15 text-[#efece6]"
+    `min-h-10 rounded-full px-4 py-1.5 text-xs font-medium transition ${
+      on
+        ? "bg-[#c4a46c] text-[#16140f] shadow-md"
+        : "border border-white/15 text-[#efece6] hover:bg-white/10"
     }`;
 
   return (
-    <div className="pointer-events-auto flex w-full flex-wrap items-end gap-2 rounded-2xl border border-white/10 bg-[#101218]/88 px-4 py-3 backdrop-blur-md">
-      {compact ? null : <AppearanceStrip />}
-      <Slider
-        label="Dissection"
-        value={dissection}
-        onChange={(v) => {
-          setDissection(v);
-          if (v < 0.02) setPeel(null);
-        }}
-      />
-      <Slider label="Explode" value={explode} onChange={setExplode} />
-      {compact ? null : (
-        <Slider
-          label="Clip height"
-          value={clipY}
-          min={0}
-          max={1.8}
-          onChange={(v) => {
-            setClipY(v);
-            setClipEnabled(true);
-          }}
-        />
-      )}
-      <div className="flex w-full flex-wrap gap-2">
-        {(Object.keys(REGIONS) as RegionId[]).map((id) => (
+    <div className="atlas-panel pointer-events-auto flex max-w-4xl w-full flex-col gap-3 rounded-2xl border border-white/10 bg-[#101218]/90 px-4 py-3 backdrop-blur-md shadow-2xl">
+      {toast ? (
+        <p className="w-full rounded-full bg-[#c4a46c]/15 px-3 py-1 text-center text-[11px] text-[#c4a46c]">
+          {toast}
+        </p>
+      ) : null}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          {compact ? null : <AppearanceStrip />}
+        </div>
+
+        <div className="flex flex-1 items-center gap-4 min-w-[14rem] max-w-md px-2">
+          <label className="flex flex-1 items-center gap-2 text-[10px] tracking-wide text-[#b7b3aa] uppercase">
+            <span className="w-14 shrink-0 font-medium text-[#c4a46c]">Erection</span>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={arousal}
+              onChange={(e) => setLiving({ arousal: Number(e.target.value) })}
+              className="h-7 w-full accent-[#c4a46c]"
+            />
+            <span className="w-8 shrink-0 text-right">{Math.round(arousal * 100)}%</span>
+          </label>
+        </div>
+
+        <div className="flex items-center gap-2">
           <button
-            key={id}
             type="button"
-            onClick={() => goRegion(id)}
-            className={chip(region === id)}
+            onClick={() => {
+              const next = arousal > 0.85 ? 0 : arousal + 0.35;
+              setLiving({ arousal: Math.min(1, next) });
+            }}
+            className={chip(arousal > 0.1)}
           >
-            {REGIONS[id].label}
+            Arousal +
           </button>
-        ))}
-        <button type="button" onClick={() => (tourIndex === null ? startTour() : stopTour())} className={chip(tourIndex !== null)}>
-          Tour
-        </button>
-        <button type="button" onClick={() => (demoIndex === null ? startDemo() : stopDemo())} className={chip(demoIndex !== null)}>
-          Demo
-        </button>
-        <button type="button" onClick={() => setPhotoreal(!photoreal)} className={chip(photoreal)}>
-          Nude
-        </button>
-        {compact ? null : (
-          <button type="button" onClick={() => setClipEnabled(!clipEnabled)} className={chip(clipEnabled)}>
-            Clip
+          <button
+            type="button"
+            onClick={() => {
+              setLiving({ arousal: 0 });
+            }}
+            className={chip(arousal === 0)}
+          >
+            Flaccid
           </button>
-        )}
-        <button type="button" onClick={resetView} className={chip(false)}>
-          Reset
-        </button>
-        <button type="button" onClick={undoHide} className={chip(false)}>
-          Undo hide
-        </button>
-        <button
-          type="button"
-          onClick={focusSelection}
-          className={chip(Boolean(selectedId))}
-        >
-          Focus
-        </button>
-        <button type="button" onClick={toggleLabels} className={chip(showLabels)}>
-          Plates
-        </button>
-        <button type="button" onClick={toggleContext} className={chip(contextOn)}>
-          Context
-        </button>
-        <button type="button" onClick={togglePathway} className={chip(pathwayOn)}>
-          Pathway
-        </button>
-        <button type="button" onClick={toggleXray} className={chip(xrayOn)}>
-          X-ray
-        </button>
-        <button type="button" onClick={() => setClipMode(clipMode === "sagittal" ? "off" : "sagittal")} className={chip(clipMode === "sagittal")}>
-          Sagittal
-        </button>
-        <button type="button" onClick={() => setClipMode(clipMode === "coronal" ? "off" : "coronal")} className={chip(clipMode === "coronal")}>
-          Coronal
-        </button>
-        <button type="button" onClick={() => setClipMode(clipMode === "axial" ? "off" : "axial")} className={chip(clipMode === "axial")}>
-          Axial
-        </button>
-        <button type="button" onClick={() => setClipMode(clipMode === "quarter" ? "off" : "quarter")} className={chip(clipMode === "quarter")}>
-          Quarter
-        </button>
-        <button type="button" onClick={() => setClipMode(clipMode === "hemi" ? "off" : "hemi")} className={chip(clipMode === "hemi")}>
-          Hemi
-        </button>
+          <button type="button" onClick={onSnapshot} className={chip(false)}>
+            Snapshot
+          </button>
+          <button type="button" onClick={onShare} className={chip(false)}>
+            Share
+          </button>
+          <button type="button" onClick={resetView} className={chip(false)}>
+            Reset
+          </button>
+        </div>
       </div>
+
+      <details className="w-full">
+        <summary className="min-h-9 cursor-pointer list-none rounded-xl border border-white/10 px-3 py-1.5 text-[10px] tracking-[0.16em] text-[var(--atlas-accent)] uppercase hover:bg-white/5 transition">
+          Sexual physiology & studio lighting
+        </summary>
+        <div className="mt-2">
+          <ExperienceControls />
+        </div>
+      </details>
     </div>
   );
 }

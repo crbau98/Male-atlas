@@ -1,4 +1,4 @@
-const CACHE = "male-atlas-v7";
+const CACHE = "male-atlas-v27";
 const PRECACHE = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 self.addEventListener("install", (event) => {
@@ -20,13 +20,19 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-  const live =
-    url.pathname.startsWith("/skins/") ||
-    url.pathname.startsWith("/models/") ||
-    url.pathname.startsWith("/_next/");
-  if (live) {
+  const nextAsset = url.pathname.startsWith("/_next/");
+  const heavyAsset = url.pathname.startsWith("/skins/") || url.pathname.startsWith("/models/");
+  if (nextAsset || heavyAsset) {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((cached) => cached || Promise.reject())),
+      fetch(request)
+        .then((response) => {
+          if (response.ok && heavyAsset) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
     );
     return;
   }

@@ -17,16 +17,7 @@ export function FigurePlate() {
   if (dissection < 0.08 && !peelCenter && !part) return null;
 
   const plate =
-    FIGURES.find((f) => f.id === selectedId)?.plate ??
-    (region === "head"
-      ? "Encephalon"
-      : region === "chest"
-        ? "Thorax"
-        : region === "abdomen"
-          ? "Abdomen"
-          : region === "pelvis"
-            ? "Pelvis"
-            : "Adult male");
+    FIGURES.find((f) => f.id === selectedId)?.plate ?? "Genitalia & Sexual Physiology";
 
   const legend = FIGURES.filter(
     (fig) => fig.regions.includes(region) || (region === "full" && dissection > 0.35),
@@ -38,7 +29,7 @@ export function FigurePlate() {
         Plate · {plate}
       </p>
       <h3 className="font-serif text-xl leading-tight">
-        {part ? part.name : "Anatomical figure"}
+        {part ? part.name : "Sexual Physiology Figure"}
       </h3>
       {part ? (
         <p className="mt-1 text-[11px] leading-5 text-[#4a4338]">
@@ -46,8 +37,7 @@ export function FigurePlate() {
         </p>
       ) : (
         <p className="mt-1 text-[11px] leading-5 text-[#4a4338]">
-          Tap a numbered structure. Quarter and Hemi are textbook cuts. Pathway
-          keeps the related tree lit; X-ray ghosts the rest.
+          Touch the living model or use the arousal controls to observe erectile tumescence and dartos reflex.
         </p>
       )}
       {legend.length > 0 ? (

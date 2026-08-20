@@ -3,6 +3,12 @@
 :root {
   --background: #07080c;
   --foreground: #efece6;
+  --atlas-background: #07080c;
+  --atlas-foreground: #efece6;
+  --atlas-muted: #aaa69e;
+  --atlas-accent: #c4a46c;
+  --atlas-panel: rgb(16 18 24 / 92%);
+  --atlas-bottom: #0b0d12;
 }
 
 @theme inline {
@@ -39,4 +45,35 @@ input[type="range"] {
 
 details summary::-webkit-details-marker {
   display: none;
+}
+
+.atlas-shell {
+  background: var(--atlas-background);
+  transition: background-color 240ms ease, color 240ms ease;
+}
+
+.atlas-panel {
+  background: var(--atlas-panel);
+  box-shadow:
+    0 18px 44px rgb(0 0 0 / 22%),
+    inset 0 1px 0 rgb(255 255 255 / 4%);
+}
+
+.atlas-bottom {
+  background: var(--atlas-bottom);
+}
+
+[data-atlas-theme="light"] {
+  --atlas-background: #eee8dc;
+  --atlas-foreground: #f5f1e9;
+  --atlas-muted: #b8b0a5;
+  --atlas-accent: #d2ad68;
+  --atlas-panel: rgb(25 24 22 / 91%);
+  --atlas-bottom: #171715;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .atlas-shell {
+    transition: none;
+  }
 }

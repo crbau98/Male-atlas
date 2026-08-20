@@ -7,8 +7,12 @@ import { REGIONS, TOUR, type RegionId, type Vec3 } from "./regions";
 import type { ClipMode } from "./clip";
 import { nextClipMode } from "./clip";
 import { DEMO } from "./demo";
+import type { TouchZone } from "./living-touch";
 
 type CameraGoal = { eye?: Vec3; target: Vec3; distance?: number };
+export type AtlasTheme = "dark" | "light";
+export type LightingPreset = "museum" | "clinical" | "dramatic";
+export type QualityMode = "auto" | "balanced" | "high";
 
 type ViewSnap = {
   dissection: number;
@@ -60,6 +64,15 @@ type AtlasState = {
   showLabels: boolean;
   pinned: Array<{ id: string; point: Vec3 }>;
   history: ViewSnap[];
+  theme: AtlasTheme;
+  lightingPreset: LightingPreset;
+  qualityMode: QualityMode;
+  physiologyOn: boolean;
+  physiologyIntensity: number;
+  breathingOn: boolean;
+  affect: number;
+  arousal: number;
+  touchZone: TouchZone | null;
   setAppearance: (id: AppearanceId | null) => void;
   setDissection: (v: number) => void;
   setExplode: (v: number) => void;
@@ -106,6 +119,13 @@ type AtlasState = {
   closePeel: () => void;
   undoView: () => void;
   pushHistory: () => void;
+  setTheme: (v: AtlasTheme) => void;
+  setLightingPreset: (v: LightingPreset) => void;
+  setQualityMode: (v: QualityMode) => void;
+  togglePhysiology: () => void;
+  setPhysiologyIntensity: (v: number) => void;
+  toggleBreathing: () => void;
+  setLiving: (patch: { affect?: number; arousal?: number; touchZone?: TouchZone | null }) => void;
 };
 
 const defaultSystems = Object.fromEntries(SYSTEM_ORDER.map((s) => [s, true]));
@@ -151,7 +171,7 @@ function applyRegionPatch(id: RegionId) {
   return {
     region: id,
     cameraGoal: { eye: region.eye, target: region.target },
-    brainFocus: id === "head",
+    brainFocus: false,
     pelvisFocus: id === "pelvis",
     dissection: region.dissection,
     peelCenter: region.peel,
@@ -166,8 +186,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   clipY: 1.8,
   clipEnabled: false,
   clipMode: "off" as ClipMode,
-  contextOn: true,
-  pathwayOn: true,
+  contextOn: false,
+  pathwayOn: false,
   xrayOn: false,
   familyOn: false,
   peelCenter: null,
@@ -181,16 +201,25 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   systemOn: defaultSystems,
   search: "",
   brainFocus: false,
-  pelvisFocus: false,
+  pelvisFocus: true,
   photoreal: true,
   mobileTab: "view",
   cameraGoal: null,
-  region: "full",
+  region: "pelvis",
   tourIndex: null,
   demoIndex: null,
-  showLabels: true,
+  showLabels: false,
   pinned: [],
   history: [] as ViewSnap[],
+  theme: "dark",
+  lightingPreset: "museum",
+  qualityMode: "auto",
+  physiologyOn: true,
+  physiologyIntensity: 0.85,
+  breathingOn: true,
+  affect: 0.15,
+  arousal: 0.35,
+  touchZone: "pelvis",
   setAppearance: (id) => set({ appearanceId: id }),
   setDissection: (dissection) => set({ dissection }),
   setExplode: (explode) => set({ explode }),
@@ -265,14 +294,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
   toggleSystem: (id) =>
     set({ systemOn: { ...get().systemOn, [id]: !get().systemOn[id] } }),
   setSearch: (search) => set({ search }),
-  setBrainFocus: (brainFocus) => {
-    if (brainFocus) get().goRegion("head");
-    else set({ brainFocus: false });
-  },
-  setPelvisFocus: (pelvisFocus) => {
-    if (pelvisFocus) get().goRegion("pelvis");
-    else set({ pelvisFocus: false });
-  },
+  setBrainFocus: () => {},
+  setPelvisFocus: () => {},
   setPhotoreal: (photoreal) => set({ photoreal }),
   setMobileTab: (mobileTab) => set({ mobileTab }),
   lookAt: (target, eye) => {
@@ -291,7 +314,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     const step = TOUR[index];
     if (!step) {
       set({ tourIndex: null, explode: 0 });
-      get().goRegion("full");
+      get().goRegion("pelvis");
       return;
     }
     set({
@@ -319,7 +342,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     if (current === null) return;
     if (current <= 0) {
       get().stopTour();
-      get().goRegion("full");
+      get().goRegion("pelvis");
       return;
     }
     get().applyTourStep(current - 1);
@@ -329,7 +352,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     const step = DEMO[index];
     if (!step) {
       set({ demoIndex: null, xrayOn: false, clipMode: "off", clipEnabled: false, explode: 0 });
-      get().goRegion("full");
+      get().goRegion("pelvis");
       return;
     }
     const region = REGIONS[step.region];
@@ -349,11 +372,11 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       dissection: step.dissection,
       region: step.region,
       cameraGoal: { eye: region.eye, target: region.target },
-      brainFocus: step.region === "head",
+      brainFocus: false,
       pelvisFocus: step.region === "pelvis",
       peelCenter: step.peel === undefined ? region.peel : step.peel,
       peelRadius: 0.16,
-      showLabels: true,
+      showLabels: false,
     });
   },
   startDemo: () => {
@@ -369,7 +392,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
     if (current === null) return;
     if (current <= 0) {
       get().stopDemo();
-      get().goRegion("full");
+      get().goRegion("pelvis");
       return;
     }
     get().applyDemoStep(current - 1);
@@ -394,8 +417,8 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       clipEnabled: false,
       clipY: 1.8,
       clipMode: "off" as ClipMode,
-      contextOn: true,
-      pathwayOn: true,
+      contextOn: false,
+      pathwayOn: false,
       xrayOn: false,
       familyOn: false,
       peelCenter: null,
@@ -405,17 +428,33 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       hidden: new Set(),
       hiddenStack: [],
       brainFocus: false,
-      pelvisFocus: false,
+      pelvisFocus: true,
       photoreal: true,
       systemOn: defaultSystems,
-      cameraGoal: { eye: REGIONS.full.eye, target: REGIONS.full.target },
-      region: "full",
+      cameraGoal: { eye: REGIONS.pelvis.eye, target: REGIONS.pelvis.target },
+      region: "pelvis",
       tourIndex: null,
       demoIndex: null,
       mobileTab: "view",
       pinned: [],
-      showLabels: true,
+      showLabels: false,
       history: [],
+      affect: 0.15,
+      arousal: 0.35,
+      touchZone: "pelvis",
+    }),
+  setTheme: (theme) => set({ theme }),
+  setLightingPreset: (lightingPreset) => set({ lightingPreset }),
+  setQualityMode: (qualityMode) => set({ qualityMode }),
+  togglePhysiology: () => set({ physiologyOn: !get().physiologyOn }),
+  setPhysiologyIntensity: (physiologyIntensity) =>
+    set({ physiologyIntensity: Math.min(1, Math.max(0, physiologyIntensity)) }),
+  toggleBreathing: () => set({ breathingOn: !get().breathingOn }),
+  setLiving: (patch) =>
+    set({
+      affect: patch.affect ?? get().affect,
+      arousal: patch.arousal ?? get().arousal,
+      touchZone: patch.touchZone === undefined ? get().touchZone : patch.touchZone,
     }),
   pushHistory: () => {
     const cur = takeSnap(get());
@@ -456,7 +495,7 @@ export const useAtlas = create<AtlasState>((set, get) => ({
       region: prev.region,
       photoreal: prev.photoreal,
       history: hist,
-      brainFocus: prev.region === "head",
+      brainFocus: false,
       pelvisFocus: prev.region === "pelvis",
     });
   },

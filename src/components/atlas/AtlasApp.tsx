@@ -2,25 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
-import { catalog } from "@/lib/catalog";
 import { useAtlas } from "@/lib/atlas-store";
 import type { AppearanceId } from "@/lib/types";
 import { useIsPhone } from "@/lib/use-is-phone";
 import { AppearanceSelect, AppearanceStrip } from "./AppearanceSelect";
-import { Inspector } from "./Inspector";
 import { InstallHint } from "./InstallHint";
 import { LayerBar } from "./LayerBar";
-import { HoverChip } from "./HoverChip";
-import { FigurePlate } from "./FigurePlate";
 import { RegionRail } from "./RegionRail";
-import { SelectionHud } from "./SelectionHud";
-import { StructureTree } from "./StructureTree";
 import { AtlasLoader } from "./AtlasLoader";
+import { LivingHud } from "./LivingHud";
 import { CoachHint } from "./CoachHint";
 import { MobileDock } from "./MobileDock";
+import { applyViewFromUrl } from "@/lib/view-link";
 
 const LOOKS: AppearanceId[] = ["julian", "malik", "kenji", "diego"];
 const LOOK_KEY = "male-atlas-look";
+const EXPERIENCE_KEY = "male-atlas-experience-v1";
 
 const AtlasCanvas = dynamic(
   () => import("./AtlasCanvas").then((m) => m.AtlasCanvas),
@@ -31,28 +28,8 @@ export function AtlasApp() {
   const appearanceId = useAtlas((s) => s.appearanceId);
   const setAppearance = useAtlas((s) => s.setAppearance);
   const resetView = useAtlas((s) => s.resetView);
-  const toggleIsolate = useAtlas((s) => s.toggleIsolate);
-  const hideSelected = useAtlas((s) => s.hideSelected);
-  const nextTour = useAtlas((s) => s.nextTour);
-  const prevTour = useAtlas((s) => s.prevTour);
-  const stopTour = useAtlas((s) => s.stopTour);
-  const focusSelection = useAtlas((s) => s.focusSelection);
   const goRegion = useAtlas((s) => s.goRegion);
-  const goAdjacentRegion = useAtlas((s) => s.goAdjacentRegion);
-  const pinSelection = useAtlas((s) => s.pinSelection);
-  const toggleLabels = useAtlas((s) => s.toggleLabels);
-  const toggleContext = useAtlas((s) => s.toggleContext);
-  const togglePathway = useAtlas((s) => s.togglePathway);
-  const toggleXray = useAtlas((s) => s.toggleXray);
-  const toggleFamily = useAtlas((s) => s.toggleFamily);
-  const setClipMode = useAtlas((s) => s.setClipMode);
-  const mobileTab = useAtlas((s) => s.mobileTab);
-  const setMobileTab = useAtlas((s) => s.setMobileTab);
-  const tourIndex = useAtlas((s) => s.tourIndex);
-  const demoIndex = useAtlas((s) => s.demoIndex);
-  const nextDemo = useAtlas((s) => s.nextDemo);
-  const prevDemo = useAtlas((s) => s.prevDemo);
-  const stopDemo = useAtlas((s) => s.stopDemo);
+  const theme = useAtlas((s) => s.theme);
   const phone = useIsPhone();
 
   useEffect(() => {
@@ -67,68 +44,79 @@ export function AtlasApp() {
   }, [appearanceId]);
 
   useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(EXPERIENCE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as Partial<ReturnType<typeof useAtlas.getState>>;
+        useAtlas.setState({
+          theme: saved.theme === "light" ? "light" : "dark",
+          lightingPreset:
+            saved.lightingPreset === "clinical" || saved.lightingPreset === "dramatic"
+              ? saved.lightingPreset
+              : "museum",
+          qualityMode:
+            saved.qualityMode === "balanced" || saved.qualityMode === "high"
+              ? saved.qualityMode
+              : "auto",
+          physiologyOn: saved.physiologyOn !== false,
+          physiologyIntensity:
+            typeof saved.physiologyIntensity === "number" ? saved.physiologyIntensity : 0.85,
+          breathingOn: saved.breathingOn !== false,
+        });
+      }
+    } catch {
+      window.localStorage.removeItem(EXPERIENCE_KEY);
+    }
+
+    return useAtlas.subscribe((state, previous) => {
+      if (
+        state.theme === previous.theme &&
+        state.lightingPreset === previous.lightingPreset &&
+        state.qualityMode === previous.qualityMode &&
+        state.physiologyOn === previous.physiologyOn &&
+        state.physiologyIntensity === previous.physiologyIntensity &&
+        state.breathingOn === previous.breathingOn
+      ) {
+        return;
+      }
+      window.localStorage.setItem(
+        EXPERIENCE_KEY,
+        JSON.stringify({
+          theme: state.theme,
+          lightingPreset: state.lightingPreset,
+          qualityMode: state.qualityMode,
+          physiologyOn: state.physiologyOn,
+          physiologyIntensity: state.physiologyIntensity,
+          breathingOn: state.breathingOn,
+        }),
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    applyViewFromUrl();
+  }, []);
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setAppearance(null);
       if (event.key === "r" || event.key === "R") resetView();
-      if (event.key === "x" || event.key === "X") toggleIsolate();
-      if (event.key === "h" || event.key === "H") hideSelected();
-      if (event.key === " " || event.key === "ArrowRight") {
-        event.preventDefault();
-        if (useAtlas.getState().demoIndex !== null) nextDemo();
-        else nextTour();
+      if (event.key === "1") goRegion("pelvis");
+      if (event.key === "2") goRegion("close");
+      if (event.key === "3") goRegion("angle");
+      if (event.key === "4") goRegion("full");
+      if (event.key === "a" || event.key === "A") {
+        const cur = useAtlas.getState().arousal;
+        const next = cur > 0.85 ? 0 : cur + 0.35;
+        useAtlas.getState().setLiving({ arousal: Math.min(1, next) });
       }
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        if (useAtlas.getState().demoIndex !== null) prevDemo();
-        else prevTour();
-      }
-      if (event.key === "u" || event.key === "U") useAtlas.getState().undoView();
-      if (event.key === "f" || event.key === "F") focusSelection();
-      if (event.key === "[" ) goAdjacentRegion(-1);
-      if (event.key === "]" ) goAdjacentRegion(1);
-      if (event.key === "1") goRegion("full");
-      if (event.key === "2") goRegion("head");
-      if (event.key === "3") goRegion("chest");
-      if (event.key === "4") goRegion("abdomen");
-      if (event.key === "5") goRegion("pelvis");
-      if (event.key === "p" || event.key === "P") pinSelection();
-      if (event.key === "l" || event.key === "L") toggleLabels();
-      if (event.key === "c" || event.key === "C") toggleContext();
-      if (event.key === "y" || event.key === "Y") toggleXray();
-      if (event.key === "w" || event.key === "W") togglePathway();
-      if (event.key === "g" || event.key === "G") toggleFamily();
-      if (event.key === "6") setClipMode("sagittal");
-      if (event.key === "7") setClipMode("coronal");
-      if (event.key === "8") setClipMode("axial");
-      if (event.key === "9") setClipMode("quarter");
-      if (event.key === "-") setClipMode("hemi");
-      if (event.key === "0") setClipMode("off");
-      if (event.key === "d" || event.key === "D") {
-        const demoing = useAtlas.getState().demoIndex !== null;
-        if (demoing) stopDemo();
-        else useAtlas.getState().startDemo();
-      }
-      if (event.key === "t" || event.key === "T") {
-        const touring = useAtlas.getState().tourIndex !== null;
-        if (touring) stopTour();
-        else useAtlas.getState().startTour();
+      if (event.key === "f" || event.key === "F") {
+        useAtlas.getState().setLiving({ arousal: 0 });
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [focusSelection, goAdjacentRegion, goRegion, hideSelected, nextDemo, nextTour, pinSelection, prevDemo, prevTour, resetView, setAppearance, setClipMode, stopDemo, stopTour, toggleContext, toggleFamily, toggleIsolate, toggleLabels, togglePathway, toggleXray]);
-
-  useEffect(() => {
-    if (tourIndex === null) return;
-    const id = window.setTimeout(() => useAtlas.getState().nextTour(), 7200);
-    return () => window.clearTimeout(id);
-  }, [tourIndex]);
-
-  useEffect(() => {
-    if (demoIndex === null) return;
-    const id = window.setTimeout(() => useAtlas.getState().nextDemo(), 6400);
-    return () => window.clearTimeout(id);
-  }, [demoIndex]);
+  }, [goRegion, resetView, setAppearance]);
 
   useEffect(() => {
     if ("serviceWorker" in navigator) {
@@ -140,7 +128,10 @@ export function AtlasApp() {
 
   if (phone) {
     return (
-      <div className="flex h-dvh flex-col overflow-hidden bg-[#07080c] text-[#efece6]">
+      <div
+        data-atlas-theme={theme}
+        className="atlas-shell flex h-dvh flex-col overflow-hidden text-[var(--atlas-foreground)]"
+      >
         <div className="relative min-h-0 flex-1">
           <AtlasCanvas />
           <AtlasLoader />
@@ -158,60 +149,27 @@ export function AtlasApp() {
           </div>
           <div className="pointer-events-none absolute inset-x-3 top-16 flex max-h-[34vh] flex-col items-start gap-2 overflow-y-auto">
             <CoachHint />
-            <SelectionHud />
+            <LivingHud />
           </div>
           <RegionRail />
-          {catalog.meta.partCount === 0 ? (
-            <p className="absolute inset-x-4 top-20 rounded-full bg-black/70 px-3 py-2 text-center text-[11px] text-[#d9c59a]">
-              Run python3 scripts/ingest_bodyparts3d.py
-            </p>
-          ) : null}
         </div>
-        <div className="shrink-0 space-y-2 border-t border-white/10 bg-[#0b0d12] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
-          {mobileTab === "view" ? (
-            <>
-              <MobileDock />
-              <InstallHint />
-            </>
-          ) : null}
-          {mobileTab === "parts" ? (
-            <div className="h-[42vh]">
-              <StructureTree />
-            </div>
-          ) : null}
-          {mobileTab === "info" ? (
-            <div className="max-h-[42vh] overflow-y-auto">
-              <Inspector />
-            </div>
-          ) : null}
-          <nav className="grid grid-cols-3 gap-2">
-            {(["view", "parts", "info"] as const).map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setMobileTab(tab)}
-                className={`min-h-12 rounded-xl text-xs tracking-[0.18em] uppercase ${
-                  mobileTab === tab ? "bg-[#c4a46c] text-[#16140f]" : "bg-white/5 text-[#b7b3aa]"
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </nav>
+        <div className="atlas-bottom shrink-0 space-y-2 border-t border-white/10 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-2">
+          <MobileDock />
+          <InstallHint />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="relative h-dvh overflow-hidden bg-[#07080c] text-[#efece6]">
+    <div
+      data-atlas-theme={theme}
+      className="atlas-shell relative h-dvh overflow-hidden text-[var(--atlas-foreground)]"
+    >
       <AtlasCanvas />
       <AtlasLoader />
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-4 md:p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="h-[min(78vh,760px)] w-80">
-            <StructureTree />
-          </div>
+        <div className="flex items-start justify-end gap-4">
           <div className="flex w-80 flex-col items-end gap-3">
             <button
               type="button"
@@ -220,10 +178,7 @@ export function AtlasApp() {
             >
               Appearances
             </button>
-            <SelectionHud />
-            <FigurePlate />
-            <HoverChip />
-            <Inspector />
+            <LivingHud />
           </div>
         </div>
         <div className="flex justify-center">

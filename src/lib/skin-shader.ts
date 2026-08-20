@@ -35,7 +35,7 @@ float atlasVnoise(vec3 p) {
   float n000 = atlasHash(i);
   float n100 = atlasHash(i + vec3(1.0, 0.0, 0.0));
   float n010 = atlasHash(i + vec3(0.0, 1.0, 0.0));
-  float n110 = atlasHash(i + vec3(1.0, 0.0, 1.0));
+  float n110 = atlasHash(i + vec3(1.0, 1.0, 0.0));
   float n001 = atlasHash(i + vec3(0.0, 0.0, 1.0));
   float n101 = atlasHash(i + vec3(1.0, 0.0, 1.0));
   float n011 = atlasHash(i + vec3(0.0, 1.0, 1.0));

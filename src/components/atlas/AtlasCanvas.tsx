@@ -16,6 +16,7 @@ import { LoadBoundary } from "./LoadBoundary";
 import { LocalStudio } from "./LocalStudio";
 import { PhotorealGenitals } from "./PhotorealGenitals";
 import { PhotorealShell } from "./PhotorealShell";
+import { SectionPlanes } from "./SectionPlanes";
 
 function Lights({ shadows, shadowSize }: { shadows: boolean; shadowSize: number }) {
   const lightingPreset = useAtlas((s) => s.lightingPreset);
@@ -47,6 +48,16 @@ function Lights({ shadows, shadowSize }: { shadows: boolean; shadowSize: number 
         intensity={light.rim.intensity}
         color={light.rim.color}
       />
+      <directionalLight position={[-2.8, 1.6, -1.8]} intensity={0.52} color="#9eb4d4" />
+      <directionalLight position={[0.1, 1.4, -2.4]} intensity={0.38} color="#ffd4b8" />
+      <spotLight
+        position={[0.35, 3.5, 1.35]}
+        angle={0.48}
+        penumbra={0.9}
+        intensity={0.78}
+        color="#ffe6d0"
+      />
+      <pointLight position={[0, 1.1, 1.6]} intensity={0.32} color="#ffd8c0" distance={4} />
     </>
   );
 }

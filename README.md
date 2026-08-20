@@ -1,6 +1,6 @@
 # Male Atlas
 
-Interactive 3D atlas of an adult male: a photoreal nude surface that peels into **textbook anatomical plates** — numbered callouts, ink rims, and Netter-style color on named BodyParts3D meshes (muscle, viscera, vessels, nerves, skeleton, brain, genitalia).
+Interactive 3D model focused on explicit male genitalia and living male sexual arousal physiology.
 
 ## Phone app
 
@@ -9,41 +9,38 @@ On a phone the atlas **opens straight into the 3D view** (Julian, or your last l
 - **iPhone:** Share → Add to Home Screen
 - **Android:** Chrome menu → Install app, or the in-app install chip
 
-Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap skin to peel, **hold** to grow the window, **double-tap** a named part to isolate it. Side arrows step Full → Brain → Chest → Belly → Pelvis. Gold markers jump the camera. **Tour** walks the layers with Back/Next. **Focus** flies in on the selected mesh; **Pin label** keeps a numbered callout; **Plates** toggles the figure labels. Bottom tabs: View, Parts, Info.
+Gestures: drag to orbit, pinch to zoom, two-finger drag to pan, tap or stroke genitalia to stimulate erection, glans engorgement, scrotal dartos contraction, and vascular flush. Navigation arrows step through viewing angles ("Genitalia", "Glans & Shaft", "Side & Dartos", "Pelvic Overview").
 
-The live surface is a **UV-mapped photoreal adult male** (Blender Studio Human Base Meshes, CC0) with a photographic albedo. Tap or hold the skin to peel into BodyParts3D plates; a **ghost inner shell** keeps the body cavity. **Sagittal / coronal / axial** cut textbook sections. **Context** dims other systems so the selected organ reads as the figure.
+The live surface is a **UV-mapped photoreal adult male** (Blender Studio Human Base Meshes, CC0) with a photographic albedo, PBR normal and roughness maps, and procedural sexual arousal physiology shaders.
 
 ## Run
 
 ```bash
 npm install
-python3 scripts/ingest_bodyparts3d.py   # downloads are expected in tmp/ already, or fetch the official zip first
-python3 scripts/ingest_genitals.py      # optional: merge IS-A penis/testis meshes into reproductive.glb
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). Tap **Open the atlas** or pick Julian, Malik, Kenji, or Diego.
+Open [http://localhost:3000](http://localhost:3000). Tap **Explore Genitalia & Physiology** or pick Julian, Malik, Kenji, or Diego.
 
-## Nude genitalia
+## Explicit Genitalia & Sexual Physiology
 
-The photoreal body mesh has no external genitalia. The atlas:
-
-1. Opens a window in the skin over the pelvic surface
-2. Draws BodyParts3D IS-A meshes for glans (`FJ3134`) and corpus cavernosum (`FJ3132`) with photoreal skin/mucosa
-3. Blends pubic hair at the pelvic opening
-4. Reveals corpus spongiosum, testes, and epididymides as you peel or raise dissection
+The app features:
+1. High-fidelity 3D male genitalia: corpora cavernosa shaft (with bilobed cross section and prominent dorsal vein), glans penis (with coronal sulcus flare, frenulum notch, and vertical meatal slit), and asymmetrical scrotum (with median raphe and dartos rugae wrinkles).
+2. Dynamic erectile enlargement, length/girth tumescence, glans hyperemia, and scrotal elevation.
+3. Interactive touch and stroke controls across the genital area and body with tactile haptics.
+4. Dedicated Erection slider, "Arousal +" and "Flaccid" quick toggles, and hotkeys.
 
 ## Data
 
-Meshes come from [BodyParts3D 4.0](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html) (adult male volunteer). The body uses the PART-OF tree; named penis and testis meshes come from the IS-A tree, both at 99% polygon reduction.
-
-Required credit: **BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International**.
+Meshes and base morphology use Blender Studio Human Base Meshes (CC0) and BodyParts3D (The Database Center for Life Science, CC BY 4.0).
 
 Gallery portraits are clothed appearance references. The 3D surface is a photographic bake on the realistic male base mesh, then tinted per look.
 
-This is an educational atlas, not a diagnostic device. BodyParts3D authors note residual mapping errors.
-
 ## Keys
 
-- Click photoreal surface: peel window (genital region also selects the named part)
-- `T` tour, `Space` / `→` next step, `←` previous, `R` reset, `X` isolate, `H` hide, `U` undo hide, `F` focus, `P` pin label, `L` plates on/off, `C` context, `6` sagittal / `7` coronal / `8` axial / `0` clip off, `1`–`5` regions, `[` `]` previous/next region, `Esc` appearances
+- `1`–`4` Genital viewing angles (Genitalia, Glans & Shaft, Side & Dartos, Pelvic Overview)
+- `A` / `a` Increment arousal / erection
+- `F` / `f` Set flaccid
+- `R` / `r` Reset view
+- `Esc` Appearance selection
+

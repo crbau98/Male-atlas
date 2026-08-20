@@ -341,6 +341,7 @@ export function PhotorealShell() {
       const isSkin = mesh.name === "PhotorealMale";
       mesh.visible = isSkin;
       if (!isSkin) return;
+      mesh.geometry.computeVertexNormals();
       mesh.material = material;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
@@ -411,4 +412,3 @@ useTexture.preload(ALBEDO_URL);
 useTexture.preload(FACE_URL);
 useTexture.preload(FRONT_URL);
 useTexture.preload(BACK_URL);
-useGLTF.preload("/models/systems/reproductive.glb");

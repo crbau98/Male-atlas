@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 const sources = {
   niddk: "https://www.niddk.nih.gov/health-information/urologic-diseases/erectile-dysfunction/treatment",
@@ -47,6 +48,7 @@ export default function ResearchLab() {
       <p className="max-w-2xl text-lg text-slate-300">Adult sexual-health education and study planning. A physiological animation cannot establish how a person feels or predict treatment response.</p>
       <p className="text-sm text-amber-200">Prototype · synthetic model · no clinical validation · evidence reviewed September 5, 2026</p>
     </header>
+    <Link href="/research/anatomy" className="block rounded-2xl border border-teal-300/30 bg-teal-300/5 p-6 transition hover:bg-teal-300/10"><span className="text-xs tracking-widest text-teal-300">NEW / ANATOMY STUDIO</span><h2 className="mt-2 text-2xl">Explore adult anatomy in 3D →</h2><p className="mt-2 text-slate-300">Surface anatomy, selectable reproductive tissues, breathing and illustrative circulation.</p></Link>
     <section className="grid gap-5 md:grid-cols-2" aria-label="Mechanism explorer">
       <div className={panel}>
         <h2 className="mb-3 text-2xl font-medium">A vascular teaching model</h2>

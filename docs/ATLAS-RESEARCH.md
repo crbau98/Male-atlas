@@ -34,3 +34,24 @@ Success requires reproducibility, correct evidence interpretation and usable unc
 - EAU, Management of Erectile Dysfunction: https://uroweb.org/guidelines/sexual-and-reproductive-health/chapter/management-of-erectile-dysfunction
 
 These summaries are not a systematic review. Recheck recommendations before any clinical use.
+
+## Adult anatomy studio iteration
+
+`/research/anatomy` adds a neutral adult reference with physically based skin shading and four material tones. It includes an approximate static external genital envelope, selectable BodyParts3D reproductive tissues, a respiratory teaching sequence and a simplified systemic circulation overlay. The studio has front/back/side/pelvic/chest cameras, reference-opacity and label controls, pause/scrub/replay, keyboard-accessible structure selection, and a responsive phone layout.
+
+The inherited photographic bake has visible projection seams; the clinical studio uses the existing skin normal texture with consistent material shading instead. The external genital envelope is a simplified reconstruction, not scanned genital skin. Skin materials share one geometry and imply no demographic differences in function. Facial movement, neural signaling, hormonal effects and subjective states are not simulated.
+
+### Model boundaries
+
+- Internal meshes and the adult surface are separate reference assets. A fixed depth offset approximates alignment; it is not validated image registration.
+- Reproductive structures remain static. The external envelope uses a static curved surface and approximate scrotal contour; fine folds, urethral lumen and foreskin variation are not resolved.
+- Breathing uses a periodic illustrative excursion, approximate chest deformation and diaphragm translation. Airway geometry remains static. Values are not lung volumes, oxygen saturation, or diagnostic measurements.
+- Circulation uses a schematic systemic path and moving markers. It omits pulmonary circulation and local genital hemodynamics. Marker speed does not represent measured blood velocity.
+- Playback is opt-in and stops after eight seconds. Pausing and scrubbing share the same clock used by the model. Static scenes render on demand.
+- GLTF scenes and materials are cloned for the clinical viewer; cached reference geometry is not modified. Internal assets load only when their mode is selected. Graphics failure leaves explanatory content accessible.
+
+### Verification
+
+Run `node --test scripts/test-clinical-anatomy.mjs` with Node 24+ to verify selectable structure IDs and animated objects against the shipped GLB files. This checks asset integration, not anatomical accuracy. Also run scoped ESLint and the production build. Browser verification covers mode switching, skin presets, tissue selection, timeline playback/end/replay/scrub, reset, and phone-width layout.
+
+Clinical reading: [NCI SEER male reproductive anatomy](https://training.seer.cancer.gov/anatomy/reproductive/male/) and [NHLBI breathing mechanics](https://www.nhlbi.nih.gov/health/lungs/body-controls-breathing). Independent anatomical review is required before any clinical use.

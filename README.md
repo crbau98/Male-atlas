@@ -48,3 +48,7 @@ Gallery portraits are clothed appearance references. The 3D surface is a photogr
 ## Clinical research workspace
 
 Open `/research` for an abstract vascular teaching model, separate sexual-health outcome domains, a filterable evidence library and a JSON research-brief export. This educational prototype does not predict individual physiology or recommend treatments. See [the research roadmap](docs/ATLAS-RESEARCH.md) for validation milestones and source provenance.
+
+### Adult anatomy studio
+
+Open `/research/anatomy` from the research workspace to explore the adult reference, reproductive tissue selection, and illustrative breathing/circulation. Includes skin materials, camera presets, transparency, and a pausable timeline. The external genital surface is an approximate reconstruction; source models and motion are not clinically validated. Asset integration checks: `node --test scripts/test-clinical-anatomy.mjs` (Node 24+).

@@ -44,3 +44,7 @@ Gallery portraits are clothed appearance references. The 3D surface is a photogr
 - `R` / `r` Reset view
 - `Esc` Appearance selection
 
+
+## Clinical research workspace
+
+Open `/research` for an abstract vascular teaching model, separate sexual-health outcome domains, a filterable evidence library and a JSON research-brief export. This educational prototype does not predict individual physiology or recommend treatments. See [the research roadmap](docs/ATLAS-RESEARCH.md) for validation milestones and source provenance.
